@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
-import path from "node:path";
-
-const LOADER = path.resolve(__dirname, 'src/visual-edits/component-tagger-loader.js');
 
 const nextConfig: NextConfig = {
-  output: 'standalone', // Required for Docker builds
   images: {
     remotePatterns: [
       {
@@ -17,14 +13,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  outputFileTracingRoot: path.resolve(__dirname, '../../'),
-  turbopack: {
-    rules: {
-      "*.{jsx,tsx}": {
-        loaders: [LOADER]
-      }
-    }
-  }
+  // Enable standalone for Docker, but works with Vercel too
+  output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
 };
 
 export default nextConfig;
