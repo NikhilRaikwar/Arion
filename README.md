@@ -45,8 +45,7 @@ ChainBot/
 
 - Node.js 18+ or Bun
 - AIML API Key ([Get one here](https://aimlapi.com))
-- Privy App ID (already configured: `cmhf6a18z008dib0dh6yaa6ik`)
-
+- Privy App ID 
 ### Installation
 
 1. **Clone the repository**
@@ -68,7 +67,7 @@ Edit `.env` file and add your AIML API key:
 
 ```env
 # Already configured
-NEXT_PUBLIC_PRIVY_APP_ID=cmhf6a18z008dib0dh6yaa6ik
+NEXT_PUBLIC_PRIVY_APP_ID=PRIVY_APP_ID
 
 # Add your AIML API key here
 AIML_API_KEY=your_actual_aiml_api_key_here
