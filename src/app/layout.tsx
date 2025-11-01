@@ -11,7 +11,24 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "ChainBot - Your AI Web3 Assistant",
-  description: "AI-driven support chatbot platform for DeFi and Web3 applications",
+  description: "AI-driven support chatbot platform for DeFi and Web3 applications powered by GPT-4o with wallet integration",
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
+  openGraph: {
+    title: "ChainBot - AI Web3 Assistant",
+    description: "Intelligent AI chatbot for Web3 and DeFi applications",
+    type: "website",
+    images: ['/favicon.png'],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ChainBot - AI Web3 Assistant",
+    description: "Intelligent AI chatbot for Web3 and DeFi applications",
+    images: ['/favicon.png'],
+  },
 }
 
 export default function RootLayout({
