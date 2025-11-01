@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
     let pageKey: string | undefined = undefined;
 
     do {
-      const body = pageKey ? { ...baseBody, pageKey } : baseBody;
-      const r = await fetch(url, {
+      const body: any = pageKey ? { ...baseBody, pageKey } : baseBody;
+      const r: Response = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Alchemy Data error", detail: text }, { status: 502 });
       }
 
-      const j = await r.json();
+      const j: any = await r.json();
       const pageTokens = (j?.data?.tokens ?? []) as any[];
       tokens.push(...pageTokens);
       pageKey = j?.data?.pageKey || undefined;
