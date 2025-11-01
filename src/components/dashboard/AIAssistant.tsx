@@ -411,115 +411,78 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
 
 // Component to format message content with clickable links and viewable images
 function FormattedMessage({ content }: { content: string }) {
-  // Parse and format the content
-  const formatContent = (text: string) => {
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-
-    // Regex patterns
-    const imagePattern = /\[!?\[?[Ii]mage\]?\]\((https?:\/\/[^\s)]+)\)/g;
-    const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-
-    // First, handle markdown images
-    let match;
-    const processedIndices: Array<[number, number]> = [];
-
-    // Process image markdown
-    imagePattern.lastIndex = 0;
-    while ((match = imagePattern.exec(text)) !== null) {
-      const startIdx = match.index;
-      const endIdx = match.index + match[0].length;
-      processedIndices.push([startIdx, endIdx]);
-
-      if (startIdx > lastIndex) {
-        parts.push(text.substring(lastIndex, startIdx));
-      }
-
-      parts.push(
-        <img
-          key={`img-${startIdx}`}
-          src={match[1]}
-          alt="NFT"
-          className="rounded-lg max-w-full h-auto my-2 border border-gray-200"
-          style={{ maxHeight: '300px' }}
-        />
-      );
-
-      lastIndex = endIdx;
+  const parts: React.ReactNode[] = [];
+  let currentIndex = 0;
+  
+  // Combined pattern to match markdown links/images and raw URLs
+  // Matches: [text](url) or just http://url
+  const combinedPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+)/g;
+  
+  let match;
+  while ((match = combinedPattern.exec(content)) !== null) {
+    // Add text before the match
+    if (match.index > currentIndex) {
+      parts.push(content.substring(currentIndex, match.index));
     }
-
-    // Process remaining text for links
-    const remainingText = text.substring(lastIndex);
-    lastIndex = 0;
-
-    linkPattern.lastIndex = 0;
-    while ((match = linkPattern.exec(remainingText)) !== null) {
-      const startIdx = match.index;
-      const endIdx = match.index + match[0].length;
-
-      if (startIdx > lastIndex) {
-        const beforeLink = remainingText.substring(lastIndex, startIdx);
-        parts.push(processRawUrls(beforeLink, parts.length));
+    
+    if (match[1] && match[2]) {
+      // Markdown link: [text](url)
+      const linkText = match[1];
+      const url = match[2];
+      
+      // Check if it's an image link (Thumbnail, Full Image, Image, etc.)
+      const isImage = /^(thumbnail|full image|image|nft|view image)$/i.test(linkText.trim());
+      
+      if (isImage) {
+        // Render as image
+        parts.push(
+          <div key={`img-${match.index}`} className="my-2">
+            <img
+              src={url}
+              alt={linkText}
+              className="rounded-lg max-w-full h-auto border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ maxHeight: '400px', maxWidth: '100%' }}
+              onClick={() => window.open(url, '_blank')}
+            />
+          </div>
+        );
+      } else {
+        // Render as clickable link
+        parts.push(
+          <a
+            key={`link-${match.index}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 underline break-all font-medium"
+          >
+            {linkText}
+          </a>
+        );
       }
-
+    } else if (match[3]) {
+      // Raw URL
+      const url = match[3];
       parts.push(
         <a
-          key={`link-${parts.length}-${startIdx}`}
-          href={match[2]}
+          key={`url-${match.index}`}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:text-blue-800 underline break-all"
         >
-          {match[1]}
+          {url}
         </a>
       );
-
-      lastIndex = endIdx;
     }
-
-    // Process remaining text for raw URLs
-    if (lastIndex < remainingText.length) {
-      parts.push(processRawUrls(remainingText.substring(lastIndex), parts.length));
-    }
-
-    return parts;
-  };
-
-  // Process raw URLs (not in markdown format)
-  const processRawUrls = (text: string, baseKey: number) => {
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-
-    urlPattern.lastIndex = 0;
-    while ((match = urlPattern.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-
-      parts.push(
-        <a
-          key={`url-${baseKey}-${match.index}`}
-          href={match[0]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 underline break-all"
-        >
-          {match[0]}
-        </a>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-
-    return parts.length === 0 ? text : parts;
-  };
-
-  return <>{formatContent(content)}</>;
+    
+    currentIndex = match.index + match[0].length;
+  }
+  
+  // Add remaining text
+  if (currentIndex < content.length) {
+    parts.push(content.substring(currentIndex));
+  }
+  
+  return <>{parts.length > 0 ? parts : content}</>;
 }

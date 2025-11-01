@@ -8,7 +8,15 @@ const BLOCKCHAIN_KEYWORDS = [
   "balance", "wallet", "token", "eth", "ethereum", "polygon", "my tokens",
   "my balance", "check balance", "show balance", "how much", "transfer",
   "send", "transaction", "tx", "contract", "nft", "gas", "wei", "gwei",
-  "smart contract", "contract address", "validate contract"
+  "smart contract", "contract address", "validate contract", "blockchain",
+  "crypto", "cryptocurrency", "bitcoin", "btc", "solidity", "web3", "defi",
+  "decentralized", "dapp", "metamask", "uniswap", "opensea", "ens", "erc20",
+  "erc721", "erc1155", "solana", "arbitrum", "optimism", "base", "avalanche",
+  "bnb", "binance", "coinbase", "staking", "yield", "liquidity", "swap",
+  "bridge", "layer 2", "l2", "rollup", "zk", "proof", "validator", "node",
+  "mining", "miner", "hash", "block", "chain", "consensus", "pow", "pos",
+  "dao", "governance", "proposal", "vote", "airdrop", "mint", "burn",
+  "0x", "address"
 ];
 
 function isBlockchainQuery(message: string): boolean {
@@ -310,6 +318,7 @@ async function analyzeSolidityContract(contractCode: string, fileName: string): 
 // Analyze image with AI
 async function analyzeImageWithAI(imageBase64: string, prompt: string): Promise<string> {
   try {
+    // Analyze the image with blockchain context
     const response = await fetch("https://api.aimlapi.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -321,17 +330,37 @@ async function analyzeImageWithAI(imageBase64: string, prompt: string): Promise<
         messages: [
           {
             role: "system",
-            content: "You are Arion. Analyze blockchain images. Give SHORT responses with emojis. NO markdown symbols like ** or ##. Just plain bold text."
+            content: `You are Arion, a specialized blockchain AI assistant. 
+
+CRITICAL RULES:
+1. First, determine if this image is blockchain/crypto-related (wallets, transactions, NFTs, smart contracts, DeFi, exchanges, blockchain explorers, crypto charts, etc.)
+2. If it IS blockchain-related: Analyze it with detailed, SHORT insights using emojis
+3. If it is NOT blockchain-related: Respond with exactly:
+   "❌ Not Blockchain-Related Image
+   
+   I can only analyze blockchain, cryptocurrency, and Web3-related images like:
+   • Wallet screenshots
+   • Transaction receipts  
+   • NFT artwork or metadata
+   • Smart contract code
+   • DeFi dashboards
+   • Blockchain explorers
+   • Crypto exchange screens
+   
+   Please upload a blockchain-related image! 🔗"
+
+NO markdown symbols like ** or ##. Just plain text with emojis.`
           },
           {
             role: "user",
             content: [
-              { type: "text", text: prompt },
+              { type: "text", text: prompt || "Analyze this image and tell me if it's blockchain-related" },
               { type: "image_url", image_url: { url: imageBase64 } }
             ]
           }
         ],
-        max_tokens: 800
+        max_tokens: 800,
+        temperature: 0.2
       })
     });
 
@@ -515,6 +544,13 @@ export async function POST(req: NextRequest) {
     if (isBalanceQuery(message) && !targetAddress) {
       return NextResponse.json({
         response: "💡 To check wallet balance, either:\n\n1️⃣ Connect your wallet using the button above\n2️⃣ Provide a wallet address in your message (e.g., 'check balance 0x...')\n\nTry again! 🚀"
+      });
+    }
+
+    // Check if message is blockchain-related (only for non-Alchemy queries)
+    if (!alchemyContext && !isBlockchainQuery(message)) {
+      return NextResponse.json({
+        response: "❌ Not Blockchain-Related\n\nI'm Arion, a specialized AI assistant for blockchain and Web3. I can only help with:\n\n💰 Wallet balances & token holdings\n🖼️ NFT collections\n📊 Transaction history\n📜 Smart contracts & Solidity\n🔄 DeFi protocols\n⛓️ Multi-chain queries\n🎓 Blockchain education\n\nPlease ask me something related to blockchain, crypto, or Web3! 🚀"
       });
     }
 

@@ -36,7 +36,7 @@ const faqs = [
 
 export function FAQs() {
   return (
-    <section className="py-24 px-4 bg-gradient-to-br from-gray-50 to-purple-50">
+    <section id="faqs" className="py-24 px-4 bg-gradient-to-br from-gray-50 to-purple-50">
       <div className="max-w-4xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16">
