@@ -284,7 +284,7 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                       </div>
                     )}
                     <div
-                      className={`max-w-[85%] md:max-w-3xl rounded-2xl px-4 py-3 md:px-6 md:py-4 ${
+                      className={`max-w-[85%] md:max-w-3xl rounded-2xl px-4 py-3 md:px-6 md:py-4 break-words ${
                         msg.role === "user"
                           ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                           : "bg-white border border-gray-200 text-gray-800"
@@ -301,12 +301,12 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                           ) : (
                             <div className="flex items-center gap-2 text-xs opacity-80">
                               <FileCode className="w-4 h-4" />
-                              <span className="font-mono">{msg.file.name}</span>
+                              <span className="font-mono break-all">{msg.file.name}</span>
                             </div>
                           )}
                         </div>
                       )}
-                      <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base">
+                      <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-wrap-anywhere">
                         {msg.content}
                       </p>
                     </div>

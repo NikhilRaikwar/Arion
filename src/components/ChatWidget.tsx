@@ -375,7 +375,7 @@ export function ChatWidget() {
                     </div>
                   )}
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
+                    className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm break-words ${
                       msg.role === "user"
                         ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                         : "bg-white border border-gray-200 text-gray-800"
@@ -392,12 +392,12 @@ export function ChatWidget() {
                         ) : (
                           <div className="flex items-center gap-2 text-xs">
                             <FileCode className="w-4 h-4" />
-                            <span className="font-mono">{msg.file.name}</span>
+                            <span className="font-mono break-all">{msg.file.name}</span>
                           </div>
                         )}
                       </div>
                     )}
-                    <p className="whitespace-pre-wrap leading-relaxed">
+                    <p className="whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">
                       {msg.content}
                     </p>
                     {msg.txHash && (
