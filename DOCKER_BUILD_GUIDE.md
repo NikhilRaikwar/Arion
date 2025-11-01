@@ -199,7 +199,7 @@ In the NodeOps dashboard, add your environment variables:
 
 Fill in the template information:
 
-**Template Name:** ChainBot - AI Web3 Assistant
+**Template Name:** Arion - AI Web3 Assistant
 
 **Short Description:**
 ```
@@ -208,7 +208,7 @@ Intelligent AI chatbot for DeFi and Web3 applications. Powered by GPT-4o with wa
 
 **Full Description:**
 ```
-ChainBot is a production-ready AI assistant specifically designed for Web3 and DeFi applications. 
+Arion is a production-ready AI assistant specifically designed for Web3 and DeFi applications. 
 
 Key Features:
 ✨ GPT-4o powered AI responses
@@ -253,7 +253,7 @@ https://cloud.nodeops.network/marketplace/YOUR_TEMPLATE_ID
 ```
 
 ### Project Overview
-Use the content from `CHAINBOT_README.md` highlighting:
+Use the content from `README.md` highlighting:
 - AI-powered Web3 assistant
 - Wallet integration with Privy
 - GPT-4o via AIML API
@@ -269,7 +269,7 @@ Use the content from `CHAINBOT_README.md` highlighting:
 
 ### Demo Video Checklist
 Record a 5-10 minute video showing:
-1. ✅ ChainBot landing page tour
+1. ✅ Arion landing page tour
 2. ✅ Wallet connection demo
 3. ✅ AI chat interaction (ask DeFi questions)
 4. ✅ Widget demo page

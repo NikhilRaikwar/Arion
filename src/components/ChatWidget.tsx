@@ -84,8 +84,8 @@ export function ChatWidget() {
   useEffect(() => {
     if (messages.length > 0) {
       const storageKey = authenticated && walletAddress 
-        ? `chainbot_widget_${walletAddress}`
-        : 'chainbot_widget_guest';
+        ? `arion_widget_${walletAddress}`
+        : 'arion_widget_guest';
       localStorage.setItem(storageKey, JSON.stringify(messages));
     }
   }, [messages, walletAddress, authenticated]);
