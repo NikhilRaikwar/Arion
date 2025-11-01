@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMultiChainPortfolio, getWalletPortfolio } from "@/lib/alchemy";
-import type { SupportedChain } from "@/lib/alchemy";
+import { getTokenBalancesWithPrices, type SupportedChain } from "@/lib/alchemy";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const address = searchParams.get("address");
-    const chain = searchParams.get("chain") as SupportedChain | null;
+    const chainsParam = searchParams.get("chains");
 
     if (!address) {
       return NextResponse.json(
@@ -23,19 +22,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // If chain is specified, get single chain portfolio
-    if (chain) {
-      const portfolio = await getWalletPortfolio(address, chain);
-      return NextResponse.json({ success: true, portfolio });
-    }
+    // Parse chains from query parameter
+    const chains: SupportedChain[] = chainsParam
+      ? chainsParam.split(",").map(c => c.trim() as SupportedChain)
+      : ["ethereum", "polygon", "base", "arbitrum", "optimism"];
 
-    // Otherwise get multi-chain portfolio
-    const portfolios = await getMultiChainPortfolio(address);
-    return NextResponse.json({ success: true, portfolios });
+    // Get comprehensive portfolio with prices
+    const portfolio = await getTokenBalancesWithPrices(address, chains);
+
+    return NextResponse.json({ 
+      success: true, 
+      portfolio: {
+        address: portfolio.address,
+        chains: portfolio.chains,
+        totalValue: portfolio.totalValue,
+        tokens: portfolio.tokens,
+        tokenCount: portfolio.tokens.length
+      }
+    });
   } catch (error) {
     console.error("Portfolio API error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch portfolio data" },
+      { error: error instanceof Error ? error.message : "Failed to fetch portfolio data" },
       { status: 500 }
     );
   }

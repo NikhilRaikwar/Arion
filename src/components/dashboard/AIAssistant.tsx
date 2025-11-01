@@ -12,7 +12,10 @@ import {
   Plus,
   Sparkles,
   Paperclip,
-  X
+  X,
+  FileCode,
+  Image as ImageIcon,
+  File
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,7 +23,11 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
-  image?: string;
+  file?: {
+    name: string;
+    type: string;
+    data: string;
+  };
 }
 
 interface AIAssistantProps {
@@ -31,7 +38,8 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,60 +48,116 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
+    // Check file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File must be less than 10MB");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
-      return;
+    setSelectedFile(file);
+
+    // Create preview based on file type
+    const isImage = file.type.startsWith("image/");
+    const isText = file.type.startsWith("text/") || 
+                   file.name.endsWith(".sol") || 
+                   file.name.endsWith(".txt") ||
+                   file.name.endsWith(".json") ||
+                   file.name.endsWith(".js") ||
+                   file.name.endsWith(".ts") ||
+                   file.name.endsWith(".md");
+
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (isText) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreview(reader.result as string);
+      };
+      reader.readAsText(file);
+    } else {
+      setFilePreview(null);
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setAttachedImage(event.target?.result as string);
-      toast.success("Image attached");
-    };
-    reader.readAsDataURL(file);
+    toast.success(`${file.name} uploaded`);
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const getFileIcon = () => {
+    if (!selectedFile) return <File className="w-4 h-4" />;
+    
+    if (selectedFile.type.startsWith("image/")) {
+      return <ImageIcon className="w-4 h-4 text-purple-600" />;
+    } else if (selectedFile.name.endsWith(".sol") || selectedFile.type.startsWith("text/")) {
+      return <FileCode className="w-4 h-4 text-purple-600" />;
+    }
+    return <File className="w-4 h-4 text-purple-600" />;
   };
 
   const handleSendMessage = async () => {
-    if ((!message.trim() && !attachedImage) || isLoading) return;
+    if ((!message.trim() && !selectedFile) || isLoading) return;
 
-    const userMessage = message.trim();
-    const imageData = attachedImage;
+    const userMessage = message.trim() || `[Uploaded ${selectedFile?.name}]`;
     setMessage("");
-    setAttachedImage(null);
     setIsLoading(true);
+
+    // Prepare file data
+    let fileData = null;
+    if (selectedFile && filePreview) {
+      fileData = {
+        name: selectedFile.name,
+        type: selectedFile.type || "application/octet-stream",
+        data: filePreview
+      };
+    } else if (selectedFile) {
+      fileData = {
+        name: selectedFile.name,
+        type: selectedFile.type || "application/octet-stream",
+        data: `[Binary file: ${selectedFile.name}]`
+      };
+    }
 
     // Add user message
     const newUserMessage: Message = {
       role: "user",
-      content: userMessage || "Analyze this blockchain-related image",
+      content: userMessage,
       timestamp: Date.now(),
-      image: imageData || undefined,
+      file: fileData || undefined,
     };
     const updatedMessages = [...messages, newUserMessage];
     setMessages(updatedMessages);
+
+    // Clear file
+    clearFile();
 
     try {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: userMessage || "Analyze this blockchain-related image",
+          message: userMessage,
           messages: updatedMessages.map(m => ({ 
             role: m.role, 
             content: m.content,
-            image: m.image 
+            file: m.file 
           })),
           wallet_address: walletAddress,
-          image: imageData,
+          file: fileData,
         }),
       });
 
@@ -110,7 +174,6 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
       } else {
         const error = await response.json();
         toast.error(error.error || "Failed to send message");
-        // Remove the user message on error
         setMessages(messages);
       }
     } catch (error) {
@@ -131,7 +194,8 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
 
   const handleNewChat = () => {
     setMessages([]);
-    setAttachedImage(null);
+    setSelectedFile(null);
+    setFilePreview(null);
     toast.success("Started new chat");
   };
 
@@ -172,15 +236,15 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                 </h4>
                 <p className="text-sm md:text-base text-gray-600 max-w-md mb-6">
                   Ask me anything about blockchain, DeFi, smart contracts, or your wallet.
-                  You can also attach blockchain-related images for analysis.
+                  Upload ANY file for AI-powered analysis.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
                   <Button
                     variant="outline"
                     className="justify-start text-left h-auto py-3 px-4 text-sm"
-                    onClick={() => setMessage("What is the latest block on Ethereum?")}
+                    onClick={() => setMessage("What's my balance?")}
                   >
-                    <span>What is the latest block on Ethereum?</span>
+                    <span>What's my balance?</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -199,9 +263,9 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                   <Button
                     variant="outline"
                     className="justify-start text-left h-auto py-3 px-4 text-sm"
-                    onClick={() => setMessage("How do smart contracts work?")}
+                    onClick={() => setMessage("How do I transfer tokens?")}
                   >
-                    <span>How do smart contracts work?</span>
+                    <span>How do I transfer tokens?</span>
                   </Button>
                 </div>
               </div>
@@ -226,12 +290,21 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                           : "bg-white border border-gray-200 text-gray-800"
                       }`}
                     >
-                      {msg.image && (
-                        <img 
-                          src={msg.image} 
-                          alt="Attached" 
-                          className="rounded-lg mb-2 max-w-full h-auto max-h-64 object-contain"
-                        />
+                      {msg.file && (
+                        <div className="mb-2 pb-2 border-b border-white/20">
+                          {msg.file.type.startsWith("image/") ? (
+                            <img 
+                              src={msg.file.data} 
+                              alt={msg.file.name}
+                              className="rounded-lg max-w-full h-auto max-h-64 object-contain mb-1"
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2 text-xs opacity-80">
+                              <FileCode className="w-4 h-4" />
+                              <span className="font-mono">{msg.file.name}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                       <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base">
                         {msg.content}
@@ -261,17 +334,29 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
             )}
           </div>
 
-          {/* Attached Image Preview */}
-          {attachedImage && (
-            <div className="mb-4 relative inline-block">
-              <img 
-                src={attachedImage} 
-                alt="Attached preview" 
-                className="rounded-lg max-h-32 border-2 border-purple-300"
-              />
+          {/* File Preview */}
+          {selectedFile && (
+            <div className="mb-4 p-2 bg-purple-50 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {selectedFile.type.startsWith("image/") && filePreview ? (
+                  <>
+                    <img 
+                      src={filePreview} 
+                      alt={selectedFile.name}
+                      className="h-12 w-12 object-cover rounded flex-shrink-0"
+                    />
+                    <span className="text-sm text-gray-700 truncate">{selectedFile.name}</span>
+                  </>
+                ) : (
+                  <>
+                    {getFileIcon()}
+                    <span className="text-sm text-gray-700 truncate font-mono">{selectedFile.name}</span>
+                  </>
+                )}
+              </div>
               <button
-                onClick={() => setAttachedImage(null)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                onClick={clearFile}
+                className="text-gray-400 hover:text-gray-600 flex-shrink-0 ml-2"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -283,7 +368,7 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="*/*"
               onChange={handleFileAttach}
               className="hidden"
             />
@@ -291,9 +376,9 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
               variant="outline"
               size="icon"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
+              disabled={isLoading || !!selectedFile}
               className="flex-shrink-0 rounded-xl border-2 border-gray-200 hover:border-purple-400"
-              title="Attach blockchain-related image"
+              title="Upload any file - AI will validate if blockchain-related"
             >
               <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
             </Button>
@@ -301,13 +386,13 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Ask about blockchain, DeFi, or attach an image..."
+              placeholder={selectedFile ? "Add message (optional)" : "Ask about balance, transfers, or upload files..."}
               className="flex-1 px-3 py-5 md:px-4 md:py-6 text-sm md:text-base rounded-xl border-2 border-gray-200 focus:border-purple-400"
               disabled={isLoading}
             />
             <Button
               onClick={handleSendMessage}
-              disabled={(!message.trim() && !attachedImage) || isLoading}
+              disabled={(!message.trim() && !selectedFile) || isLoading}
               className="px-4 py-5 md:px-6 md:py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl flex-shrink-0"
             >
               {isLoading ? (
