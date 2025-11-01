@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Wallet, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const Header = () => {
   const { ready, authenticated, login, logout, user } = usePrivy();
@@ -28,11 +29,15 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xl">CB</span>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ChainBot
+            <Image
+              src="/logo1.png"
+              alt="Arion Logo"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+            />
+            <span className="text-2xl brand-font bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              ARION
             </span>
           </Link>
 

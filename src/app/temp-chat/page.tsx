@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface Message {
   role: "user" | "assistant";
@@ -38,7 +39,7 @@ export default function TempChatPage() {
 
   // Load free query count
   useEffect(() => {
-    const stored = localStorage.getItem('chainbot_free_queries');
+    const stored = localStorage.getItem('arion_free_queries');
     if (stored) {
       setFreeQueryCount(parseInt(stored, 10));
     }
@@ -55,11 +56,11 @@ export default function TempChatPage() {
   useEffect(() => {
     if (hasProcessedPendingQuery.current) return;
     
-    const pendingQuery = localStorage.getItem('chainbot_pending_query');
+    const pendingQuery = localStorage.getItem('arion_pending_query');
     if (pendingQuery) {
       hasProcessedPendingQuery.current = true;
       setMessage(pendingQuery);
-      localStorage.removeItem('chainbot_pending_query');
+      localStorage.removeItem('arion_pending_query');
       
       // Auto-send after short delay
       setTimeout(() => {
@@ -97,7 +98,7 @@ export default function TempChatPage() {
     // Increment free query count
     const newCount = freeQueryCount + 1;
     setFreeQueryCount(newCount);
-    localStorage.setItem('chainbot_free_queries', newCount.toString());
+    localStorage.setItem('arion_free_queries', newCount.toString());
 
     try {
       const response = await fetch("/api/ai/chat", {
@@ -155,7 +156,7 @@ export default function TempChatPage() {
   const handleConnectWallet = () => {
     // Save current chat to transfer to dashboard
     if (messages.length > 0) {
-      localStorage.setItem('chainbot_temp_messages', JSON.stringify(messages));
+      localStorage.setItem('arion_temp_messages', JSON.stringify(messages));
     }
     login();
   };
@@ -176,12 +177,16 @@ export default function TempChatPage() {
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
+              <Image
+                src="/logo1.png"
+                alt="Arion Logo"
+                width={40}
+                height={40}
+                className="w-10 h-10"
+              />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  ChainBot
+                <h1 className="text-xl md:text-2xl brand-font bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ARION
                 </h1>
                 <p className="text-xs text-gray-500">Try {FREE_QUERY_LIMIT} free queries</p>
               </div>
@@ -236,7 +241,7 @@ export default function TempChatPage() {
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <Sparkles className="w-12 h-12 md:w-16 md:h-16 text-purple-300 mb-4" />
                   <h4 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">
-                    Welcome to ChainBot AI!
+                    Welcome to Arion AI!
                   </h4>
                   <p className="text-sm md:text-base text-gray-600 max-w-md mb-6">
                     Try me with {FREE_QUERY_LIMIT} free queries! Ask about blockchain, DeFi, smart contracts, or Web3.

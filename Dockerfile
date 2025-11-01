@@ -1,4 +1,4 @@
-# ChainBot - AI Web3 Assistant
+# Build Arion - AI Web3 Assistant
 # Multi-stage Docker build for production deployment
 
 # Use Node.js 24 slim for smaller image size

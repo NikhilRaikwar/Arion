@@ -1,11 +1,11 @@
-# ChainBot - AI Web3 Assistant
+# Arion - AI Web3 Assistant
 
-![ChainBot](https://img.shields.io/badge/ChainBot-AI%20Web3%20Assistant-blue?style=for-the-badge&logo=ethereum)
+![Arion](https://img.shields.io/badge/Arion-AI%20Web3%20Assistant-blue?style=for-the-badge&logo=ethereum)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![GPT-4o](https://img.shields.io/badge/GPT--4o-AIML-purple?style=for-the-badge)
 
-**ChainBot** is a modern, production-ready SaaS platform featuring an AI-driven support chatbot for DeFi and Web3 applications. Powered by GPT-4o via AIML API and integrated with Privy wallet authentication, ChainBot provides intelligent, context-aware assistance for blockchain users.
+**Arion** is a modern, production-ready SaaS platform featuring an AI-driven support chatbot for DeFi and Web3 applications. Powered by GPT-4o via AIML API and integrated with Privy wallet authentication, Arion provides intelligent, context-aware assistance for blockchain users.
 
 ## 🌟 Features
 
@@ -21,7 +21,7 @@
 ## 🏗️ Architecture
 
 ```
-ChainBot/
+Arion/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx              # Landing page with hero, features, FAQs
@@ -51,7 +51,7 @@ ChainBot/
 1. **Clone the repository**
 ```bash
 git clone <your-repo-url>
-cd chainbot
+cd arion
 ```
 
 2. **Install dependencies**
@@ -109,13 +109,13 @@ This template is designed for deployment on NodeOps Cloud Marketplace:
 
 1. **Build Docker image**
 ```bash
-docker build -t chainbot .
+docker build -t arion .
 ```
 
 2. **Push to container registry**
 ```bash
-docker tag chainbot your-registry/chainbot:latest
-docker push your-registry/chainbot:latest
+docker tag arion your-registry/arion:latest
+docker push your-registry/arion:latest
 ```
 
 3. **Deploy on NodeOps**
@@ -187,12 +187,12 @@ The `ChatWidget` component accepts these props:
 Modify the system prompt in `src/app/api/chat/route.ts`:
 
 ```typescript
-let systemPrompt = `You are ChainBot, an intelligent AI assistant...`;
+let systemPrompt = `You are Arion, an intelligent AI assistant...`;
 ```
 
 ## 📱 Integrating the Widget
 
-To add ChainBot to your existing Web3 app:
+To add Arion to your existing Web3 app:
 
 1. **Copy files to your project**
    - `src/components/ChatWidget.tsx`
@@ -310,4 +310,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ by the ChainBot team. Ready to revolutionize Web3 support!
+Built with ❤️ by the Arion team. Ready to revolutionize Web3 support!

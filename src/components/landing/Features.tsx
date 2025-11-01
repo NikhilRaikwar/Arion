@@ -1,6 +1,7 @@
 "use client";
 
 import { MessageSquare, Bot, Shield, Database, Blocks, FileCode, Wallet, Activity } from "lucide-react";
+import Image from "next/image";
 
 const mainFeatures = [
   {
@@ -78,7 +79,7 @@ export function Features() {
           {/* Section Header */}
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
-              Meet ChainBot — Your{" "}
+              Meet Arion — Your{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Private AI Workspace
               </span>
@@ -92,13 +93,16 @@ export function Features() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Left: Image */}
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-gray-100">
-              <div className="aspect-[4/5] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center shadow-lg">
-                    <Bot className="w-16 h-16 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">ChainBot AI</h3>
-                  <p className="text-gray-600">Your Private Web3 Assistant</p>
+              <div className="aspect-[4/5] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-6 sm:p-8 md:p-12">
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <Image
+                    src="/banner-arion.png"
+                    alt="Arion AI"
+                    width={400}
+                    height={500}
+                    className="w-full h-auto max-w-[280px] sm:max-w-[320px] md:max-w-[360px] object-contain"
+                    priority
+                  />
                 </div>
               </div>
             </div>
@@ -145,7 +149,7 @@ export function Features() {
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
               Why Professionals Choose{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ChainBot
+                Arion
               </span>
             </h2>
           </div>

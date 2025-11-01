@@ -9,28 +9,28 @@ import {
 
 const faqs = [
   {
-    question: "What is ChainBot?",
-    answer: "ChainBot is an AI-driven support chatbot platform specifically designed for DeFi and Web3 applications. It uses GPT-4o from AIML API to provide intelligent, context-aware responses about blockchain, tokens, smart contracts, and personalized wallet support.",
+    question: "What is Arion?",
+    answer: "Arion is an AI-driven support chatbot platform specifically designed for DeFi and Web3 applications. It uses GPT-4o from AIML API to provide intelligent, context-aware responses about blockchain, tokens, smart contracts, and personalized wallet support.",
   },
   {
     question: "How does wallet integration work?",
-    answer: "ChainBot integrates with your wallet using Privy authentication. Once connected, the chatbot can access your wallet address and provide personalized support based on your holdings, transaction history, and portfolio. All data is secure and only used to enhance your support experience.",
+    answer: "Arion integrates with your wallet using Privy authentication. Once connected, the chatbot can access your wallet address and provide personalized support based on your holdings, transaction history, and portfolio. All data is secure and only used to enhance your support experience.",
   },
   {
-    question: "What kind of questions can I ask ChainBot?",
-    answer: "You can ask about token prices, DeFi protocols, smart contract interactions, gas fees, transaction history, portfolio analysis, and general Web3 concepts. ChainBot understands blockchain-specific terminology and provides accurate, up-to-date information.",
+    question: "What kind of questions can I ask Arion?",
+    answer: "You can ask about token prices, DeFi protocols, smart contract interactions, gas fees, transaction history, portfolio analysis, and general Web3 concepts. Arion understands blockchain-specific terminology and provides accurate, up-to-date information.",
   },
   {
-    question: "Can I embed ChainBot on my own site?",
-    answer: "Yes! ChainBot is designed to be easily embeddable as a widget on any DeFi or Web3 website. It's marketplace-ready and can be deployed quickly by developers to provide instant AI-powered support for your users.",
+    question: "Can I embed Arion on my own site?",
+    answer: "Yes! Arion is designed to be easily embeddable as a widget on any DeFi or Web3 website. It's marketplace-ready and can be deployed quickly by developers to provide instant AI-powered support for your users.",
   },
   {
     question: "Is my wallet data safe?",
-    answer: "Absolutely. ChainBot only reads public blockchain data associated with your wallet address. We never request or store your private keys or seed phrases. All communications are encrypted, and we follow best practices for Web3 security.",
+    answer: "Absolutely. Arion only reads public blockchain data associated with your wallet address. We never request or store your private keys or seed phrases. All communications are encrypted, and we follow best practices for Web3 security.",
   },
   {
     question: "How accurate is the AI?",
-    answer: "ChainBot is powered by GPT-4o from AIML API, one of the most advanced language models available. It's specifically trained to understand Web3 contexts and provides highly accurate responses. For real-time data like token prices, we pull from live blockchain sources.",
+    answer: "Arion is powered by GPT-4o from AIML API, one of the most advanced language models available. It's specifically trained to understand Web3 contexts and provides highly accurate responses. For real-time data like token prices, we pull from live blockchain sources.",
   },
 ];
 
@@ -47,7 +47,7 @@ export function FAQs() {
             </span>
           </h2>
           <p className="text-xl text-gray-600">
-            Everything you need to know about ChainBot
+            Everything you need to know about Arion
           </p>
         </div>
 

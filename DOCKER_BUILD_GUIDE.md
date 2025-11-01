@@ -1,6 +1,6 @@
-# ChainBot - Docker Build & Deployment Guide
+# Arion - Docker Build & Deployment Guide
 
-This guide will walk you through building, testing, and deploying your ChainBot Docker image to NodeOps Cloud Marketplace.
+This guide will walk you through building, testing, and deploying your Arion Docker image to NodeOps Cloud Marketplace.
 
 ## 📋 Prerequisites
 
@@ -15,12 +15,12 @@ This guide will walk you through building, testing, and deploying your ChainBot 
 Edit `nodeops_template.yaml` and replace `YOUR_DOCKERHUB_USERNAME` with your actual Docker Hub username:
 
 ```yaml
-image: YOUR_DOCKERHUB_USERNAME/chainbot:latest
+image: YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 **Example:**
 ```yaml
-image: johndoe/chainbot:latest
+image: johndoe/arion:latest
 ```
 
 ### 1.2 Verify Environment Variables
@@ -66,7 +66,7 @@ Enter your Docker Hub credentials when prompted.
 Replace `YOUR_DOCKERHUB_USERNAME` and API keys with your actual values:
 
 ```bash
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
   --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
   .
@@ -74,7 +74,7 @@ docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
 
 **Example:**
 ```bash
-docker build -t johndoe/chainbot:latest \
+docker build -t johndoe/arion:latest \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
   --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
   .
@@ -82,7 +82,7 @@ docker build -t johndoe/chainbot:latest \
 
 **PowerShell users (Windows):**
 ```powershell
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest `
+docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest `
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
   --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
   .
@@ -98,7 +98,7 @@ This will take 5-10 minutes. The multi-stage build process:
 It's good practice to also tag with a version number:
 
 ```bash
-docker tag YOUR_DOCKERHUB_USERNAME/chainbot:latest YOUR_DOCKERHUB_USERNAME/chainbot:v1.0.0
+docker tag YOUR_DOCKERHUB_USERNAME/arion:latest YOUR_DOCKERHUB_USERNAME/arion:v1.0.0
 ```
 
 ## ✅ Step 3: Test Locally
@@ -112,7 +112,7 @@ docker run -p 3000:3000 \
   -e NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
   -e NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
   -e ALCHEMY_API_KEY=your_alchemy_api_key \
-  YOUR_DOCKERHUB_USERNAME/chainbot:latest
+  YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 **PowerShell (Windows):**
@@ -122,7 +122,7 @@ docker run -p 3000:3000 `
   -e NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
   -e NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
   -e ALCHEMY_API_KEY=your_alchemy_api_key `
-  YOUR_DOCKERHUB_USERNAME/chainbot:latest
+  YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 **Visit `http://localhost:3000` to verify:**
@@ -146,20 +146,20 @@ Press `Ctrl+C` to stop the container.
 ### 4.1 Push Latest Tag
 
 ```bash
-docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+docker push YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 ### 4.2 Push Version Tag (if created)
 
 ```bash
-docker push YOUR_DOCKERHUB_USERNAME/chainbot:v1.0.0
+docker push YOUR_DOCKERHUB_USERNAME/arion:v1.0.0
 ```
 
 ### 4.3 Verify Upload
 
 Visit your Docker Hub repository:
 ```
-https://hub.docker.com/r/YOUR_DOCKERHUB_USERNAME/chainbot
+https://hub.docker.com/r/YOUR_DOCKERHUB_USERNAME/arion
 ```
 
 Make sure the image is **PUBLIC** (not private) for NodeOps marketplace.
@@ -283,7 +283,7 @@ When you make changes to your app:
 
 1. **Rebuild the image with build args:**
    ```bash
-   docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+   docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest \
      --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
      --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
      .
@@ -291,7 +291,7 @@ When you make changes to your app:
 
 2. **Push the update:**
    ```bash
-   docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+   docker push YOUR_DOCKERHUB_USERNAME/arion:latest
    ```
 
 3. **NodeOps auto-updates** (thanks to `imagePullPolicy: Always` in the template)
@@ -300,18 +300,18 @@ When you make changes to your app:
 
 Bash/Linux/Mac:
 ```bash
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
   --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
-  . && docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+  . && docker push YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 PowerShell:
 ```powershell
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest `
+docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest `
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
   --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
-  . ; docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+  . ; docker push YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 ## 🐛 Troubleshooting
@@ -323,20 +323,20 @@ docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest `
 # Clear npm cache and rebuild
 rm -rf node_modules package-lock.json
 npm install
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest .
+docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest .
 ```
 
 **Error: EACCES permission denied**
 ```bash
 # Run with sudo (Linux/Mac)
-sudo docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest .
+sudo docker build -t YOUR_DOCKERHUB_USERNAME/arion:latest .
 ```
 
 ### Image Too Large
 
 Check image size:
 ```bash
-docker images YOUR_DOCKERHUB_USERNAME/chainbot
+docker images YOUR_DOCKERHUB_USERNAME/arion
 ```
 
 Should be around 200-400MB. If larger, the multi-stage build is working correctly.
@@ -385,13 +385,13 @@ docker ps
 docker stop <container-id>
 
 # Remove an image
-docker rmi YOUR_DOCKERHUB_USERNAME/chainbot:latest
+docker rmi YOUR_DOCKERHUB_USERNAME/arion:latest
 
 # View image layers
-docker history YOUR_DOCKERHUB_USERNAME/chainbot:latest
+docker history YOUR_DOCKERHUB_USERNAME/arion:latest
 
 # Inspect image
-docker inspect YOUR_DOCKERHUB_USERNAME/chainbot:latest
+docker inspect YOUR_DOCKERHUB_USERNAME/arion:latest
 ```
 
 ## 📚 Additional Resources

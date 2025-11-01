@@ -10,24 +10,24 @@ import { Providers } from "@/components/Providers";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ChainBot - Your AI Web3 Assistant",
+  title: "Arion - Your AI Web3 Assistant",
   description: "AI-driven support chatbot platform for DeFi and Web3 applications powered by GPT-4o with wallet integration",
   icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/logo1.png',
+    shortcut: '/logo1.png',
+    apple: '/logo1.png',
   },
   openGraph: {
-    title: "ChainBot - AI Web3 Assistant",
+    title: "Arion - AI Web3 Assistant",
     description: "Intelligent AI chatbot for Web3 and DeFi applications",
     type: "website",
-    images: ['/favicon.png'],
+    images: ['/logo1.png'],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ChainBot - AI Web3 Assistant",
+    title: "Arion - AI Web3 Assistant",
     description: "Intelligent AI chatbot for Web3 and DeFi applications",
-    images: ['/favicon.png'],
+    images: ['/logo1.png'],
   },
 }
 
@@ -49,7 +49,7 @@ export default function RootLayout({
             data-include-search-params="true"
             data-only-in-iframe="true"
             data-debug="true"
-            data-custom-data='{"appName": "ChainBot", "version": "1.0.0", "greeting": "hi"}'
+            data-custom-data='{"appName": "Arion", "version": "1.0.0", "greeting": "hi"}'
           />
           {children}
           <VisualEditsMessenger />

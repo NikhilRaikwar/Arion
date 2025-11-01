@@ -1,6 +1,7 @@
 "use client";
 
 import { Github, Twitter } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -8,9 +9,18 @@ export function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center justify-center text-center">
           {/* Brand */}
-          <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-            ChainBot
-          </h3>
+          <div className="flex items-center gap-3 mb-3">
+            <Image
+              src="/logo1.png"
+              alt="Arion Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+            />
+            <h3 className="text-4xl brand-font">
+              ARION
+            </h3>
+          </div>
           <p className="text-gray-600 mb-8 max-w-xl text-sm">
             Your private AI assistant for Web3 and blockchain intelligence.
           </p>
@@ -40,7 +50,7 @@ export function Footer() {
           {/* Bottom Copyright */}
           <div className="border-t border-gray-200 pt-8 w-full">
             <p className="text-sm text-gray-500">
-              © 2025 ChainBot. Built with NodeOps Template. Powered by AIML API.
+              © 2025 Arion. Built with NodeOps Template. Powered by AIML API.
             </p>
           </div>
         </div>

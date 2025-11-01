@@ -13,7 +13,7 @@ export function Hero() {
     
     if (query.trim()) {
       // Save query and go to temp chat
-      localStorage.setItem('chainbot_pending_query', query.trim());
+      localStorage.setItem('arion_pending_query', query.trim());
       router.push("/temp-chat");
     }
   };
@@ -27,15 +27,15 @@ export function Hero() {
         <div className="text-center">
           {/* Main Headline */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Meet ChainBot — Your{" "}
+            Meet Arion — Your{" "}
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Private AI Workspace
+              Smart Web3 AI Assistant
             </span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-12">
-            Chat, create, and research with complete privacy. No data tracking, no ads—just powerful AI for you.
+            Chat, analyze, and explore DeFi securely. Instant answers, multi-chain insights, and seamless wallet privacy—all powered by advanced AI, built just for you.
           </p>
 
           {/* Search Input */}

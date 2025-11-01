@@ -55,7 +55,7 @@ export default function App({ children }) {
             Embeddable Chat Widget Demo
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            See ChainBot in action! The widget appears in the bottom-right corner. 
+            See Arion in action! The widget appears in the bottom-right corner. 
             Integrate it into your DeFi or Web3 application with just a few lines of code.
           </p>
         </div>
@@ -278,7 +278,7 @@ export default function App({ children }) {
               👉 Check the bottom-right corner to see the live widget in action!
             </p>
             <p className="text-sm text-gray-600">
-              Click the chat button to start a conversation with ChainBot
+              Click the chat button to start a conversation with Arion
             </p>
           </div>
         </div>

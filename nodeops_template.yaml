@@ -1,89 +1,32 @@
-# ChainBot - AI Web3 Assistant Template for NodeOps
-# Version: 1.0.0
-# Author: Nikhil Raikwar
-# Description: Production-ready AI chatbot for Web3 and DeFi applications
-
+# Defines the version of the configuration format
 version: 0.1
 
-# Template Metadata
-metadata:
-  name: chainbot-ai-assistant
-  displayName: "ChainBot - AI Web3 Assistant"
-  description: "Intelligent AI chatbot powered by GPT-4o with Privy wallet integration and multi-chain support via Alchemy API"
-  category: "AI & Machine Learning"
-  tags:
-    - ai
-    - chatbot
-    - web3
-    - defi
-    - gpt4
-    - wallet
-    - nextjs
-    - blockchain
-  version: "1.0.0"
-  author: "Nikhil Raikwar"
-  repository: "https://github.com/NikhilRaikwar/ChainBot"
-  documentation: "https://github.com/NikhilRaikwar/ChainBot/blob/main/README.md"
-
-# Environment Variables (Users will need to provide these)
-env:
-  - name: AIML_API_KEY
-    description: "API key from AIML API (https://aimlapi.com) for GPT-4o access"
-    required: true
-    type: secret
-  
-  - name: NEXT_PUBLIC_PRIVY_APP_ID
-    description: "Privy App ID for wallet authentication"
-    required: true
-    default: "cmhf6a18z008dib0dh6yaa6ik"
-  
-  - name: NEXT_PUBLIC_ALCHEMY_API_KEY
-    description: "Alchemy API key for blockchain data (optional)"
-    required: false
-  
-  - name: ALCHEMY_API_KEY
-    description: "Alchemy API key for server-side blockchain queries (optional)"
-    required: false
-
-# Services configuration
+# Services are a collection of workloads that work together
 services:
+  # Defines a workload named 'app'
   app:
-    # Docker image from Docker Hub (public)
-    image: nikhilraikwar/chainbot:latest
-    
-    # Always pull latest version
+    # Specify the container image name; Make sure image is public
+    # TODO: Replace with your Docker Hub username and desired image name
+    image: nikhilraikwar/arion:latest
+
+    # Determines when to fetch the latest version of the workload
     imagePullPolicy: Always
-    
-    # Network configuration
+
+    # Defines the command to run; empty by default
+    command: []
+
+    # Specifies arguments for the command; empty by default
+    args: []
+
+    # Defines network-related settings
     ports:
-      - containerPort: 3000
-        protocol: TCP
-        expose: true
-        name: http
-    
-    # Health checks
-    healthCheck:
-      httpGet:
-        path: /
-        port: 3000
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-      successThreshold: 1
-      failureThreshold: 3
-    
-    # Resource allocation
+      - containerPort: 3000 # The port on which the service will be available
+        protocol: TCP # The protocol used for communication
+        expose: true # This will generate the URL for the service, so it can be accessed from the internet
+
+    # Specifies the minimum resource allocation
+    # This also specify the template price
     resourceUsage:
       idle:
-        cpu: 500      # 0.5 cores for better performance
-        memory: 1024  # 1GB RAM for Next.js app
-      active:
-        cpu: 1000     # 1 core under load
-        memory: 2048  # 2GB RAM under load
-    
-    # Scaling configuration
-    scaling:
-      minReplicas: 1
-      maxReplicas: 3
-      targetCPUUtilization: 70
-      targetMemoryUtilization: 80
+        cpu: 200 # CPU allocation (0.2 cores)
+        memory: 400 # Memory allocation (400 MB)

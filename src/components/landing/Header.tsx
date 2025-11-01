@@ -2,13 +2,21 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
-import { Menu, X, Bot } from "lucide-react";
-import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export function Header() {
   const { ready, authenticated, login, user } = usePrivy();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Auto-redirect to dashboard after authentication
+  useEffect(() => {
+    if (ready && authenticated) {
+      router.push("/dashboard");
+    }
+  }, [ready, authenticated, router]);
 
   const handleGetStarted = () => {
     if (authenticated) {
@@ -23,11 +31,15 @@ export function Header() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push("/")}>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ChainBot
+            <Image
+              src="/logo1.png"
+              alt="Arion Logo"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+            />
+            <span className="text-2xl brand-font bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              ARION
             </span>
           </div>
 

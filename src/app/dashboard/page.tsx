@@ -3,8 +3,9 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Wallet, Zap } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
+import Image from "next/image";
 
 export default function DashboardPage() {
   const { ready, authenticated, user, logout } = usePrivy();
@@ -36,12 +37,16 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
+              <Image
+                src="/logo1.png"
+                alt="Arion Logo"
+                width={40}
+                height={40}
+                className="w-10 h-10"
+              />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  ChainBot
+                <h1 className="text-xl md:text-2xl brand-font bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ARION
                 </h1>
                 <p className="text-xs text-gray-500 hidden sm:block">AI Web3 Assistant</p>
               </div>

@@ -194,7 +194,7 @@ async function analyzeFileWithAI(fileName: string, fileType: string, fileData: s
         messages: [
           { 
             role: "system", 
-            content: "You are ChainBot, a blockchain expert. Analyze files and give SHORT insights with emojis. NO markdown symbols like ** or ##. Just use plain bold text."
+            content: "You are Arion, a blockchain expert. Analyze files and give SHORT insights with emojis. NO markdown symbols like ** or ##. Just use plain bold text."
           },
           { 
             role: "user", 
@@ -284,7 +284,7 @@ async function analyzeSolidityContract(contractCode: string, fileName: string): 
           messages: [
             { 
               role: "system", 
-              content: "You are ChainBot, an expert Solidity auditor. Provide SHORT security analysis with emojis. NO markdown symbols like ** or ##."
+              content: "You are Arion, an expert Solidity auditor. Provide SHORT security analysis with emojis. NO markdown symbols like ** or ##."
             },
             { role: "user", content: `Analyze this Solidity contract briefly:\n\n${contractCode}` }
           ],
@@ -321,7 +321,7 @@ async function analyzeImageWithAI(imageBase64: string, prompt: string): Promise<
         messages: [
           {
             role: "system",
-            content: "You are ChainBot. Analyze blockchain images. Give SHORT responses with emojis. NO markdown symbols like ** or ##. Just plain bold text."
+            content: "You are Arion. Analyze blockchain images. Give SHORT responses with emojis. NO markdown symbols like ** or ##. Just plain bold text."
           },
           {
             role: "user",
@@ -456,14 +456,37 @@ export async function POST(req: NextRequest) {
         if (alchemyData && alchemyData.success) {
           alchemyContext = `USER NFT DATA FROM ALCHEMY API:\n`;
           alchemyContext += `Address: ${targetAddress}\n`;
-          alchemyContext += `Total NFTs: ${alchemyData.totalCount}\n\n`;
+          alchemyContext += `Total NFTs: ${alchemyData.count || 0}\n\n`;
           
           if (alchemyData.nfts && alchemyData.nfts.length > 0) {
-            alchemyData.nfts.slice(0, 10).forEach((nft: any, idx: number) => {
-              alchemyContext += `${idx + 1}. ${nft.name || 'Unnamed NFT'}\n`;
-              alchemyContext += `   Collection: ${nft.collectionName || 'Unknown'}\n`;
-              alchemyContext += `   Chain: ${nft.network}\n`;
-              alchemyContext += `   Token ID: ${nft.tokenId}\n\n`;
+            alchemyData.nfts.forEach((nft: any, idx: number) => {
+              alchemyContext += `NFT ${idx + 1}:\n`;
+              alchemyContext += `Name: ${nft.name || 'Unnamed NFT'}\n`;
+              alchemyContext += `Description: ${nft.description || 'No description'}\n`;
+              alchemyContext += `Collection: ${nft.collection?.name || nft.contract?.openSeaMetadata?.collectionName || 'Unknown'}\n`;
+              alchemyContext += `Chain: ${nft.network}\n`;
+              alchemyContext += `Token ID: ${nft.tokenId}\n`;
+              alchemyContext += `Token Type: ${nft.tokenType}\n`;
+              alchemyContext += `Contract Address: ${nft.contract?.address}\n`;
+              
+              // Image URLs
+              if (nft.image?.cachedUrl) {
+                alchemyContext += `Image URL: ${nft.image.cachedUrl}\n`;
+              }
+              if (nft.image?.thumbnailUrl) {
+                alchemyContext += `Thumbnail URL: ${nft.image.thumbnailUrl}\n`;
+              }
+              
+              // External links
+              if (nft.raw?.metadata?.url) {
+                alchemyContext += `View on ENS: ${nft.raw.metadata.url}\n`;
+              }
+              if (nft.contract?.address && nft.tokenId) {
+                const openseaUrl = `https://opensea.io/assets/${nft.network.includes('eth') ? 'ethereum' : nft.network.replace('-mainnet', '')}/${nft.contract.address}/${nft.tokenId}`;
+                alchemyContext += `OpenSea URL: ${openseaUrl}\n`;
+              }
+              
+              alchemyContext += `\n`;
             });
           }
         }
@@ -496,7 +519,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare system message with Alchemy data context
-    let systemMessage = `You are ChainBot, a friendly AI assistant for blockchain and Web3.
+    let systemMessage = `You are Arion, a friendly AI assistant for blockchain and Web3.
 
 CRITICAL FORMATTING RULES:
 - Use emojis liberally 🚀💰🎯
@@ -504,6 +527,14 @@ CRITICAL FORMATTING RULES:
 - NO markdown symbols like ** for bold or ## for headings
 - Just use plain text that will naturally bold
 - Use bullet points with emojis instead of long paragraphs
+
+NFT DISPLAY RULES (IMPORTANT):
+- When showing NFT data, ALWAYS display the image using the Image URL provided
+- Format NFT images as: [Image](ImageURL) so they are clickable and viewable
+- Make ALL URLs clickable by formatting them properly
+- Show FULL NFT details including name, description, collection, chain, and links
+- Display thumbnail for quick preview and full image URL for high quality
+- Include OpenSea and ENS links when available
 
 Your capabilities:
 💰 Check wallet balances (Alchemy API integration)

@@ -54,7 +54,7 @@ export function ChatWidget() {
   // Load free query count for unauthenticated users
   useEffect(() => {
     if (!authenticated) {
-      const stored = localStorage.getItem('chainbot_free_queries');
+      const stored = localStorage.getItem('arion_free_queries');
       if (stored) {
         setFreeQueryCount(parseInt(stored, 10));
       }
@@ -67,8 +67,8 @@ export function ChatWidget() {
   // Load messages from localStorage on mount
   useEffect(() => {
     const storageKey = authenticated && walletAddress 
-      ? `chainbot_widget_${walletAddress}`
-      : 'chainbot_widget_guest';
+      ? `arion_widget_${walletAddress}`
+      : 'arion_widget_guest';
       
     const stored = localStorage.getItem(storageKey);
     if (stored) {
@@ -198,7 +198,7 @@ export function ChatWidget() {
     if (!authenticated) {
       const newCount = freeQueryCount + 1;
       setFreeQueryCount(newCount);
-      localStorage.setItem('chainbot_free_queries', newCount.toString());
+      localStorage.setItem('arion_free_queries', newCount.toString());
     }
 
     try {
@@ -300,7 +300,7 @@ export function ChatWidget() {
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">ChainBot</h3>
+                <h3 className="brand-font text-white text-lg">ARION</h3>
                 <p className="text-xs text-white/80">
                   {authenticated ? 'AI Web3 Assistant' : `${remainingFreeQueries} free ${remainingFreeQueries === 1 ? 'query' : 'queries'} left`}
                 </p>
@@ -325,41 +325,41 @@ export function ChatWidget() {
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-gray-50 to-purple-50">
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <Bot className="w-12 h-12 text-purple-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Hi! I'm ChainBot. Ask me anything about:
-                </p>
-                <ul className="text-xs text-gray-500 space-y-1 mb-4">
-                  <li>💰 Check wallet balances</li>
-                  <li>🔄 Guide token transfers</li>
-                  <li>📜 Analyze smart contracts</li>
-                  <li>📊 View transaction history</li>
-                  <li>📎 Upload any file for analysis</li>
-                  <li>⛽ Check gas prices</li>
-                </ul>
-                {!authenticated && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-700 font-medium">
-                      🎁 Try {FREE_QUERY_LIMIT} free queries without connecting!
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Connect wallet for unlimited access
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex gap-2 ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-gray-50 to-purple-50">
+          {messages.length === 0 ? (
+            <div className="text-center py-8">
+              <Bot className="w-12 h-12 text-purple-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-600 mb-2">
+                Hi! I'm Arion. Ask me anything about:
+              </p>
+              <ul className="text-xs text-gray-500 space-y-1 mb-4">
+                <li>💰 Check wallet balances</li>
+                <li>🔄 Guide token transfers</li>
+                <li>📜 Analyze smart contracts</li>
+                <li>📊 View transaction history</li>
+                <li>📎 Upload any file for analysis</li>
+                <li>⛽ Check gas prices</li>
+              </ul>
+              {!authenticated && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-700 font-medium">
+                    🎁 Try {FREE_QUERY_LIMIT} free queries without connecting!
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Connect wallet for unlimited access
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex gap-2 ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                   {msg.role === "assistant" && (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
                       <Bot className="w-4 h-4 text-white" />

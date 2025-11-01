@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+SC&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -184,7 +186,18 @@ h6 {
   font-size: 12px;
 }
 
+/* Brand Font - WDXL Lubrifont SC */
+.brand-font {
+  font-family: 'WDXL Lubrifont SC', sans-serif;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
 /* Hide Next.js error overlay portal */
 nextjs-portal {
   display: none !important;
+}
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

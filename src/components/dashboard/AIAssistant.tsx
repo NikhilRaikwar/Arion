@@ -18,6 +18,7 @@ import {
   File
 } from "lucide-react";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface Message {
   role: "user" | "assistant";
@@ -209,7 +210,7 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                 <Bot className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">ChainBot AI Assistant</h3>
+                <h3 className="text-lg md:text-xl brand-font text-gray-900">ARION AI ASSISTANT</h3>
                 <p className="text-xs md:text-sm text-gray-600">Powered by GPT-4o & Alchemy APIs</p>
               </div>
             </div>
@@ -232,7 +233,7 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
                 <Sparkles className="w-12 h-12 md:w-16 md:h-16 text-purple-300 mb-4" />
                 <h4 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">
-                  Welcome to ChainBot AI!
+                  Welcome to Arion AI!
                 </h4>
                 <p className="text-sm md:text-base text-gray-600 max-w-md mb-6">
                   Ask me anything about blockchain, DeFi, smart contracts, or your wallet.
@@ -306,9 +307,9 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
                           )}
                         </div>
                       )}
-                      <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-wrap-anywhere">
-                        {msg.content}
-                      </p>
+                      <div className="whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-wrap-anywhere">
+                        <FormattedMessage content={msg.content} />
+                      </div>
                     </div>
                     {msg.role === "user" && (
                       <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
@@ -406,4 +407,119 @@ export function AIAssistant({ walletAddress }: AIAssistantProps) {
       </Card>
     </div>
   );
+}
+
+// Component to format message content with clickable links and viewable images
+function FormattedMessage({ content }: { content: string }) {
+  // Parse and format the content
+  const formatContent = (text: string) => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    // Regex patterns
+    const imagePattern = /\[!?\[?[Ii]mage\]?\]\((https?:\/\/[^\s)]+)\)/g;
+    const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+
+    // First, handle markdown images
+    let match;
+    const processedIndices: Array<[number, number]> = [];
+
+    // Process image markdown
+    imagePattern.lastIndex = 0;
+    while ((match = imagePattern.exec(text)) !== null) {
+      const startIdx = match.index;
+      const endIdx = match.index + match[0].length;
+      processedIndices.push([startIdx, endIdx]);
+
+      if (startIdx > lastIndex) {
+        parts.push(text.substring(lastIndex, startIdx));
+      }
+
+      parts.push(
+        <img
+          key={`img-${startIdx}`}
+          src={match[1]}
+          alt="NFT"
+          className="rounded-lg max-w-full h-auto my-2 border border-gray-200"
+          style={{ maxHeight: '300px' }}
+        />
+      );
+
+      lastIndex = endIdx;
+    }
+
+    // Process remaining text for links
+    const remainingText = text.substring(lastIndex);
+    lastIndex = 0;
+
+    linkPattern.lastIndex = 0;
+    while ((match = linkPattern.exec(remainingText)) !== null) {
+      const startIdx = match.index;
+      const endIdx = match.index + match[0].length;
+
+      if (startIdx > lastIndex) {
+        const beforeLink = remainingText.substring(lastIndex, startIdx);
+        parts.push(processRawUrls(beforeLink, parts.length));
+      }
+
+      parts.push(
+        <a
+          key={`link-${parts.length}-${startIdx}`}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 underline break-all"
+        >
+          {match[1]}
+        </a>
+      );
+
+      lastIndex = endIdx;
+    }
+
+    // Process remaining text for raw URLs
+    if (lastIndex < remainingText.length) {
+      parts.push(processRawUrls(remainingText.substring(lastIndex), parts.length));
+    }
+
+    return parts;
+  };
+
+  // Process raw URLs (not in markdown format)
+  const processRawUrls = (text: string, baseKey: number) => {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    urlPattern.lastIndex = 0;
+    while ((match = urlPattern.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      parts.push(
+        <a
+          key={`url-${baseKey}-${match.index}`}
+          href={match[0]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 underline break-all"
+        >
+          {match[0]}
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length === 0 ? text : parts;
+  };
+
+  return <>{formatContent(content)}</>;
 }
