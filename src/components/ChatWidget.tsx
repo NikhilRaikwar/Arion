@@ -12,11 +12,11 @@ import {
   Bot, 
   User as UserIcon,
   Wallet,
-  Plus,
   Paperclip,
   Image as ImageIcon,
   FileCode,
-  File
+  File,
+  ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -94,15 +94,6 @@ export function ChatWidget() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const handleNewChat = () => {
-    setMessages([]);
-    const storageKey = authenticated && walletAddress 
-      ? `chainbot_widget_${walletAddress}`
-      : 'chainbot_widget_guest';
-    localStorage.removeItem(storageKey);
-    toast.success("Started new chat");
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -316,13 +307,13 @@ export function ChatWidget() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {messages.length > 0 && (
+              {authenticated && messages.length > 0 && (
                 <button
-                  onClick={handleNewChat}
+                  onClick={handleGoToDashboard}
                   className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-                  title="New Chat"
+                  title="Go to Dashboard"
                 >
-                  <Plus className="w-5 h-5" />
+                  <ArrowRight className="w-5 h-5" />
                 </button>
               )}
               <button
