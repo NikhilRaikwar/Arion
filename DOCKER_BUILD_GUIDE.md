@@ -28,14 +28,23 @@ image: johndoe/chainbot:latest
 Make sure your `.env` file contains all required keys:
 
 ```env
-# Privy (Already configured)
-NEXT_PUBLIC_PRIVY_APP_ID=PRIVY_APP_ID
+# Privy Wallet Authentication
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id_here
 
 # AIML API (Required - Get from https://aimlapi.com)
-AIML_API_KEY=your_actual_aiml_api_key_here
+AIML_API_KEY=your_aiml_api_key_here
 
-# Alchemy API (Optional - for blockchain data)
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
+# Alchemy API (Required for blockchain data)
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key_here
+ALCHEMY_API_KEY=your_alchemy_api_key_here
+ALCHEMY_API_URL=https://eth-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
+
+# Chain-specific Alchemy RPC URLs (Optional)
+ALCHEMY_API_URL_ETH_MAINNET=https://eth-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
+ALCHEMY_API_URL_POLYGON_MAINNET=https://polygon-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
+ALCHEMY_API_URL_BASE_MAINNET=https://base-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
+ALCHEMY_API_URL_OPTIMISM_MAINNET=https://opt-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
+ALCHEMY_API_URL_ARBITRUM_MAINNET=https://arb-mainnet.g.alchemy.com/v2/your_alchemy_api_key_here
 ```
 
 ⚠️ **IMPORTANT**: Never commit `.env` to version control. It's already in `.dockerignore`.
@@ -52,21 +61,37 @@ Enter your Docker Hub credentials when prompted.
 
 ### 2.2 Build the Image
 
-Replace `YOUR_DOCKERHUB_USERNAME` with your actual username:
+**Important:** Next.js requires certain environment variables at build time for static optimization. You MUST provide them using `--build-arg`:
+
+Replace `YOUR_DOCKERHUB_USERNAME` and API keys with your actual values:
 
 ```bash
-docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest .
+docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
+  --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
+  .
 ```
 
 **Example:**
 ```bash
-docker build -t johndoe/chainbot:latest .
+docker build -t johndoe/chainbot:latest \
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
+  --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
+  .
+```
+
+**PowerShell users (Windows):**
+```powershell
+docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest `
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
+  --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
+  .
 ```
 
 This will take 5-10 minutes. The multi-stage build process:
-1. Installs dependencies (deps stage)
-2. Builds Next.js app (builder stage)
-3. Creates minimal production image (runner stage)
+1. **deps stage**: Installs production dependencies only
+2. **builder stage**: Installs all dependencies and builds Next.js app with environment variables
+3. **runner stage**: Creates minimal production image (~400MB) with only runtime dependencies
 
 ### 2.3 Tag with Version (Optional)
 
@@ -78,20 +103,41 @@ docker tag YOUR_DOCKERHUB_USERNAME/chainbot:latest YOUR_DOCKERHUB_USERNAME/chain
 
 ## ✅ Step 3: Test Locally
 
-Before pushing, test your Docker image locally:
+Before pushing, test your Docker image locally with all environment variables:
 
+**Bash/Linux/Mac:**
 ```bash
 docker run -p 3000:3000 \
-  -e AIML_API_KEY=your_actual_api_key \
-  -e NEXT_PUBLIC_PRIVY_APP_ID=PRIVY_APP_ID \
+  -e AIML_API_KEY=your_aiml_api_key \
+  -e NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
+  -e NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
+  -e ALCHEMY_API_KEY=your_alchemy_api_key \
   YOUR_DOCKERHUB_USERNAME/chainbot:latest
 ```
 
-Visit `http://localhost:3000` to verify:
+**PowerShell (Windows):**
+```powershell
+docker run -p 3000:3000 `
+  -e AIML_API_KEY=your_aiml_api_key `
+  -e NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
+  -e NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
+  -e ALCHEMY_API_KEY=your_alchemy_api_key `
+  YOUR_DOCKERHUB_USERNAME/chainbot:latest
+```
+
+**Visit `http://localhost:3000` to verify:**
 - ✅ Landing page loads correctly
-- ✅ Wallet connection works
-- ✅ Chat interface responds
+- ✅ Wallet connection works (Privy modal appears)
+- ✅ Chat interface responds with AI
+- ✅ Blockchain queries work
 - ✅ All features functional
+
+**Logs should show:**
+```
+▲ Next.js 15.3.5
+- Local:        http://localhost:3000
+✓ Ready in XXXms
+```
 
 Press `Ctrl+C` to stop the container.
 
@@ -137,8 +183,17 @@ In the NodeOps dashboard, add your environment variables:
 | Variable | Value | Required |
 |----------|-------|----------|
 | `AIML_API_KEY` | Your AIML API key | ✅ Yes |
-| `NEXT_PUBLIC_PRIVY_APP_ID` | PRIVY_APP_ID| ✅ Yes |
-| `NEXT_PUBLIC_ALCHEMY_API_KEY` | Your Alchemy key | ⚠️ Optional |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Your Privy App ID | ✅ Yes |
+| `NEXT_PUBLIC_ALCHEMY_API_KEY` | Your Alchemy key | ✅ Yes |
+| `ALCHEMY_API_KEY` | Your Alchemy key | ✅ Yes |
+| `ALCHEMY_API_URL` | https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+| `ALCHEMY_API_URL_ETH_MAINNET` | https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+| `ALCHEMY_API_URL_POLYGON_MAINNET` | https://polygon-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+| `ALCHEMY_API_URL_BASE_MAINNET` | https://base-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+| `ALCHEMY_API_URL_OPTIMISM_MAINNET` | https://opt-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+| `ALCHEMY_API_URL_ARBITRUM_MAINNET` | https://arb-mainnet.g.alchemy.com/v2/YOUR_KEY | ⚠️ Optional |
+
+**Note:** Chain-specific URLs are optional. If not provided, the app will use the main `ALCHEMY_API_KEY` for all chains.
 
 ### 5.4 Set Template Details
 
@@ -226,9 +281,12 @@ Record a 5-10 minute video showing:
 
 When you make changes to your app:
 
-1. **Rebuild the image:**
+1. **Rebuild the image with build args:**
    ```bash
-   docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest .
+   docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+     --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
+     --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
+     .
    ```
 
 2. **Push the update:**
@@ -236,7 +294,25 @@ When you make changes to your app:
    docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
    ```
 
-3. **NodeOps auto-updates** (thanks to `imagePullPolicy: Always`)
+3. **NodeOps auto-updates** (thanks to `imagePullPolicy: Always` in the template)
+
+**Quick rebuild and push (one command):**
+
+Bash/Linux/Mac:
+```bash
+docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest \
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id \
+  --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key \
+  . && docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+```
+
+PowerShell:
+```powershell
+docker build -t YOUR_DOCKERHUB_USERNAME/chainbot:latest `
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id `
+  --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key `
+  . ; docker push YOUR_DOCKERHUB_USERNAME/chainbot:latest
+```
 
 ## 🐛 Troubleshooting
 

@@ -1,4 +1,4 @@
-import { Alchemy, Network } from "alchemy-sdk";
+import { Alchemy, Network, AssetTransfersCategory, SortingOrder } from "alchemy-sdk";
 
 // Multi-chain Alchemy instances for all supported EVM chains
 export const alchemyInstances = {
@@ -119,7 +119,7 @@ function formatBalance(rawBalance: string, decimals: number): string {
     const wholePart = balance / divisor;
     const fractionalPart = balance % divisor;
 
-    if (fractionalPart === 0n) {
+    if (fractionalPart === BigInt(0)) {
       return wholePart.toString();
     }
 
@@ -160,9 +160,9 @@ export async function getTokenBalancesWithPrices(
   let pageKey: string | undefined = undefined;
 
   do {
-    const requestBody = pageKey ? { ...body, pageKey } : body;
+    const requestBody: any = pageKey ? { ...body, pageKey } : body;
 
-    const response = await fetch(url, {
+    const response: Response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -173,7 +173,7 @@ export async function getTokenBalancesWithPrices(
       throw new Error(`Portfolio API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     const tokens = data?.data?.tokens ?? [];
     allTokens.push(...tokens);
     pageKey = data?.data?.pageKey;
@@ -437,7 +437,7 @@ export async function getContractInfo(address: string, chain: SupportedChain) {
   const transfers = await alchemy.core.getAssetTransfers({
     fromBlock: "0x0",
     toAddress: address,
-    category: ["external"],
+    category: [AssetTransfersCategory.EXTERNAL],
     maxCount: 1,
   });
 
@@ -477,7 +477,7 @@ export async function validateContract(address: string, chain: SupportedChain) {
   const assetTransfers = await alchemy.core.getAssetTransfers({
     fromBlock: "0x0",
     toAddress: address,
-    category: ["external"],
+    category: [AssetTransfersCategory.EXTERNAL],
     maxCount: 1,
   });
 
@@ -502,9 +502,9 @@ export async function getTransactionHistory(address: string, chain: SupportedCha
   const alchemy = getAlchemy(chain);
   const transfers = await alchemy.core.getAssetTransfers({
     fromAddress: address,
-    category: ["external", "erc20", "erc721", "erc1155"],
+    category: [AssetTransfersCategory.EXTERNAL, AssetTransfersCategory.ERC20, AssetTransfersCategory.ERC721, AssetTransfersCategory.ERC1155],
     maxCount: 50,
-    order: "desc",
+    order: SortingOrder.DESCENDING,
   });
   return transfers.transfers;
 }
