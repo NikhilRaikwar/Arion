@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { FormattedMessage } from "@/components/shared/FormattedMessage";
 
 interface Message {
   role: "user" | "assistant";
@@ -298,9 +299,9 @@ export default function TempChatPage() {
                             : "bg-white border border-gray-200 text-gray-800"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-wrap-anywhere">
-                          {msg.content}
-                        </p>
+                        <div className="whitespace-pre-wrap leading-relaxed text-sm md:text-base break-words overflow-wrap-anywhere">
+                          <FormattedMessage content={msg.content} />
+                        </div>
                       </div>
                       {msg.role === "user" && (
                         <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">

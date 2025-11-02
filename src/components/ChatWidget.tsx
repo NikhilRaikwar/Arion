@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { FormattedMessage } from "@/components/shared/FormattedMessage";
 
 interface Message {
   role: "user" | "assistant";
@@ -383,17 +384,17 @@ export function ChatWidget() {
                         ) : (
                           <div className="flex items-center gap-2 text-xs">
                             <FileCode className="w-4 h-4" />
-                            <span className="font-mono break-all">{msg.file.name}</span>
+                            <span className="font-mono truncate">{msg.file.name}</span>
                           </div>
                         )}
                       </div>
                     )}
-                    <p className="whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">
-                      {msg.content}
-                    </p>
+                    <div className="whitespace-pre-wrap leading-relaxed break-words overflow-wrap-anywhere">
+                      <FormattedMessage content={msg.content} />
+                    </div>
                     {msg.txHash && (
                       <div className="mt-2 pt-2 border-t border-gray-200 flex items-center gap-1 text-xs">
-                        <a 
+                        <a
                           href={`https://etherscan.io/tx/${msg.txHash}`}
                           target="_blank"
                           rel="noopener noreferrer"

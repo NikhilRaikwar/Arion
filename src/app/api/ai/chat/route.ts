@@ -24,15 +24,20 @@ function isBlockchainQuery(message: string): boolean {
   return BLOCKCHAIN_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
 }
 
-// Check if query is asking for user's own balance
+// Check if query is asking for balance (user's own or another address)
 function isBalanceQuery(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
   const balanceKeywords = [
     'my balance', 'my wallet', 'my tokens', 'check my', 
     'show my', 'what do i have', 'how much do i have', 
     "what's my", 'check balance', 'show balance', 'balance on',
-    'my portfolio', 'show portfolio', 'my holdings', 'check wallet'
+    'my portfolio', 'show portfolio', 'my holdings', 'check wallet',
+    'balance of', 'balance for', 'wallet balance', 'get balance',
+    'token balance', 'eth balance', 'show tokens', 'view balance',
+    'portfolio of', 'holdings of', 'tokens in', 'what does', 'tokens for'
   ];
-  return balanceKeywords.some(kw => message.toLowerCase().includes(kw));
+  return balanceKeywords.some(kw => lowerMessage.includes(kw)) || 
+         (lowerMessage.includes('balance') && /0x[a-fA-F0-9]{40}/.test(message));
 }
 
 // Check if query is asking about a smart contract
@@ -60,14 +65,18 @@ function isValidAddress(address: string): boolean {
 
 // Check if query is asking for NFTs
 function isNFTQuery(message: string): boolean {
-  const nftKeywords = ['nft', 'nfts', 'my nft', 'show nft', 'my collection'];
-  return nftKeywords.some(kw => message.toLowerCase().includes(kw));
+  const lowerMessage = message.toLowerCase();
+  const nftKeywords = ['nft', 'nfts', 'my nft', 'show nft', 'my collection', 'nft collection', 'view nft', 'get nft', 'nfts in', 'nfts for', 'nfts of'];
+  return nftKeywords.some(kw => lowerMessage.includes(kw)) ||
+         (lowerMessage.includes('nft') && /0x[a-fA-F0-9]{40}/.test(message));
 }
 
 // Check if query is asking for transactions
 function isTransactionQuery(message: string): boolean {
-  const txKeywords = ['transaction', 'transactions', 'my transactions', 'recent transactions', 'tx history'];
-  return txKeywords.some(kw => message.toLowerCase().includes(kw));
+  const lowerMessage = message.toLowerCase();
+  const txKeywords = ['transaction', 'transactions', 'my transactions', 'recent transactions', 'tx history', 'transaction history', 'transfers', 'transaction for', 'transactions of', 'tx for'];
+  return txKeywords.some(kw => lowerMessage.includes(kw)) ||
+         ((lowerMessage.includes('transaction') || lowerMessage.includes('transfer')) && /0x[a-fA-F0-9]{40}/.test(message));
 }
 
 // Extract network/chain from query
@@ -536,6 +545,17 @@ export async function POST(req: NextRequest) {
               alchemyContext += `   Time: ${new Date(tx.timestamp).toLocaleString()}\n\n`;
             });
           }
+        } else {
+          // Fallback: Provide explorer link when transaction API fails
+          const explorerLinks: { [key: string]: string } = {
+            'ethereum': 'https://etherscan.io',
+            'polygon': 'https://polygonscan.com',
+            'arbitrum': 'https://arbiscan.io',
+            'optimism': 'https://optimistic.etherscan.io',
+            'base': 'https://basescan.org'
+          };
+          const explorerUrl = explorerLinks[requestedNetwork] || explorerLinks['ethereum'];
+          alchemyContext = `TRANSACTION API UNAVAILABLE\n\nExplorer Link: ${explorerUrl}/address/${targetAddress}\n\nYou can view all transactions for this address on the blockchain explorer.`;
         }
       }
     }
@@ -557,6 +577,12 @@ export async function POST(req: NextRequest) {
     // Prepare system message with Alchemy data context
     let systemMessage = `You are Arion, a friendly AI assistant for blockchain and Web3.
 
+CONVERSATION CONTEXT:
+- REMEMBER and REFERENCE previous messages in the conversation
+- When users ask follow-up questions, understand they're continuing the previous topic
+- Use context from earlier messages to provide relevant answers
+- If they mention "that wallet", "those NFTs", "the transaction", refer to what was discussed before
+
 CRITICAL FORMATTING RULES:
 - Use emojis liberally 🚀💰🎯
 - Keep responses SHORT and concise (3-5 sentences max)
@@ -564,13 +590,23 @@ CRITICAL FORMATTING RULES:
 - Just use plain text that will naturally bold
 - Use bullet points with emojis instead of long paragraphs
 
-NFT DISPLAY RULES (IMPORTANT):
-- When showing NFT data, ALWAYS display the image using the Image URL provided
+LINK FORMATTING (EXTREMELY IMPORTANT):
+- ALWAYS format explorer links as: [View on Etherscan](URL) or [View Transactions](URL)
 - Format NFT images as: [Image](ImageURL) so they are clickable and viewable
-- Make ALL URLs clickable by formatting them properly
+- Make ALL URLs clickable by formatting them properly [text](url)
+- Never show raw URLs unless specifically requested
+- Include OpenSea links as: [OpenSea](URL)
+
+NFT DISPLAY RULES:
+- When showing NFT data, ALWAYS display the image using the Image URL provided
 - Show FULL NFT details including name, description, collection, chain, and links
 - Display thumbnail for quick preview and full image URL for high quality
 - Include OpenSea and ENS links when available
+
+TRANSACTION/EXPLORER LINKS:
+- When transaction API is unavailable, provide blockchain explorer links
+- Format them as clickable: [View Transactions on Etherscan](URL)
+- Explain what users can find on the explorer (all transactions, token transfers, internal txs)
 
 Your capabilities:
 💰 Check wallet balances (Alchemy API integration)
@@ -585,10 +621,19 @@ ${alchemyContext ? `\n\nREAL-TIME BLOCKCHAIN DATA FROM ALCHEMY:\n${alchemyContex
 
 ${wallet_address ? `\nUser's connected wallet: ${wallet_address}` : ''}
 
-Remember: SHORT responses, lots of emojis, NO ** or ## symbols!`;
+Remember: 
+- Maintain conversation context from previous messages
+- Format ALL links as clickable markdown [text](url)
+- SHORT responses, lots of emojis, NO ** or ## symbols!`;
 
-    // Call AI API
-    const response = await fetch("https://api.aimlapi.com/v1/chat/completions", {
+// Call AI API with retry logic
+let lastError: any = null;
+let response: any = null;
+const maxRetries = 3;
+  
+for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  try {
+    response = await fetch("https://api.aimlapi.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -598,7 +643,7 @@ Remember: SHORT responses, lots of emojis, NO ** or ## symbols!`;
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemMessage },
-          ...messages.slice(-10), // Keep last 10 messages for context
+          ...messages.slice(-20), // Keep last 20 messages for context (10 user + 10 assistant pairs)
           { role: "user", content: message }
         ],
         max_tokens: 1000,
@@ -606,13 +651,45 @@ Remember: SHORT responses, lots of emojis, NO ** or ## symbols!`;
       })
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AIML API error:", response.status, errorText);
+    if (response.ok) {
+      break; // Success, exit retry loop
+    }
+
+    // If not ok, read error for logging
+    const errorText = await response.text();
+    lastError = { status: response.status, text: errorText };
+    console.error(`AIML API error (attempt ${attempt}/${maxRetries}):`, response.status, errorText);
+
+    // Don't retry on client errors (4xx), only server errors (5xx)
+    if (response.status < 500) {
+      break;
+    }
+
+    // Wait before retrying (exponential backoff)
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  } catch (error) {
+    lastError = error;
+    console.error(`AIML API request failed (attempt ${attempt}/${maxRetries}):`, error);
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+}
+
+    // If we have Alchemy data but AI failed, return the data directly
+    if ((!response || !response.ok) && alchemyContext) {
+      const fallbackResponse = `✅ Here's the data from Alchemy API:\n\n${alchemyContext}\n\n⚠️ Note: AI formatting temporarily unavailable. Raw data displayed above.`;
+      return NextResponse.json({ response: fallbackResponse });
+    }
+
+    // If all retries failed
+    if (!response || !response.ok) {
+      console.error("All AIML API retry attempts failed:", lastError);
       return NextResponse.json({ 
-        error: "Failed to get AI response",
-        details: `Status: ${response.status}, ${errorText}`
-      }, { status: 500 });
+        response: "⚠️ AI service is temporarily experiencing issues. Please try again in a moment.\n\n💡 Tip: If you were asking about wallet data, try refreshing the page or rephrasing your question. 🔄"
+      });
     }
 
     const data = await response.json();

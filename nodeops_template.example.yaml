@@ -1,8 +1,9 @@
-# Arion - AI Web3 Assistant NodeOps Template
+# Arion - AI Web3 Assistant NodeOps Template (Public Example)
+# Copy this to nodeops_template.yaml and add your API keys
 version: 0.1
 
 services:
-  app:
+  arion:
     # Public Docker image
     image: nikhilraikwar/arion:latest
     
@@ -22,7 +23,7 @@ services:
         expose: true
     
     # Environment variables for runtime
-    # NOTE: Keep this YAML private on NodeOps if it contains API keys!
+    # Add your actual API keys when deploying
     env:
       - name: NODE_ENV
         value: production
