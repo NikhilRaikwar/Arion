@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getNFTsForWallet, getTokenBalancesWithPrices, getTransactionHistory, validateContract, type SupportedChain } from "@/lib/alchemy";
 
 const AIML_API_KEY = process.env.AIML_API_KEY;
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
@@ -93,82 +94,78 @@ function extractNetwork(message: string): string {
 // Fetch contract validation data from Alchemy
 async function fetchContractValidation(address: string, chain: string = 'ethereum') {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alchemy/contract`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, chain, action: "validate" })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to validate contract");
-    }
-
-    return await response.json();
+    const supportedChain = chain as SupportedChain;
+    const result = await validateContract(address, supportedChain);
+    return result;
   } catch (error) {
     console.error("Contract validation error:", error);
-    return null;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
 // Fetch comprehensive portfolio data from Alchemy
 async function fetchAlchemyPortfolio(address: string, chains: string[] = ['ethereum']) {
   try {
-    const chainsParam = chains.join(',');
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alchemy/portfolio?address=${address}&chains=${chainsParam}`,
-      { method: "GET" }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch portfolio");
-    }
-
-    return await response.json();
+    const supportedChains = chains as SupportedChain[];
+    const portfolio = await getTokenBalancesWithPrices(address, supportedChains);
+    
+    return {
+      success: true,
+      address: portfolio.address,
+      chains: portfolio.chains,
+      totalValue: portfolio.totalValue,
+      tokens: portfolio.tokens,
+      tokenCount: portfolio.tokens.length
+    };
   } catch (error) {
     console.error("Portfolio fetch error:", error);
-    return null;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
 // Fetch NFT data from Alchemy
 async function fetchAlchemyNFTs(address: string, chains: string[] = ['ethereum']) {
   try {
-    const chainsParam = chains.join(',');
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alchemy/nfts?address=${address}&chains=${chainsParam}`,
-      { method: "GET" }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch NFTs");
-    }
-
-    return await response.json();
+    const supportedChains = chains as SupportedChain[];
+    const nfts = await getNFTsForWallet(address, supportedChains);
+    
+    return {
+      success: true,
+      nfts: nfts,
+      count: nfts.length
+    };
   } catch (error) {
     console.error("NFT fetch error:", error);
-    return null;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
 // Fetch transaction history from Alchemy
 async function fetchAlchemyTransactions(address: string, chain: string = 'ethereum') {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alchemy/transactions?address=${address}&chain=${chain}`,
-      { method: "GET" }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch transactions");
-    }
-
-    return await response.json();
+    const supportedChain = chain as SupportedChain;
+    const transfers = await getTransactionHistory(address, supportedChain);
+    
+    return {
+      success: true,
+      transactions: transfers,
+      totalCount: transfers.length
+    };
   } catch (error) {
     console.error("Transaction fetch error:", error);
-    return null;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
@@ -406,7 +403,16 @@ export async function POST(req: NextRequest) {
 
     // Extract network from query
     const requestedNetwork = extractNetwork(message);
-    const chains = [requestedNetwork];
+    
+    // Determine chains to query
+    let chains: string[] = [];
+    if (message.toLowerCase().includes('multi') || message.toLowerCase().includes('all chain') || message.toLowerCase().includes('all network')) {
+      // Query multiple major chains
+      chains = ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
+    } else {
+      // Query specific chain mentioned in message
+      chains = [requestedNetwork];
+    }
 
     // Check if this is an Alchemy API query (balance, NFT, transactions, contract)
     let alchemyData = null;
@@ -499,28 +505,43 @@ export async function POST(req: NextRequest) {
           if (alchemyData.nfts && alchemyData.nfts.length > 0) {
             alchemyData.nfts.forEach((nft: any, idx: number) => {
               alchemyContext += `NFT ${idx + 1}:\n`;
-              alchemyContext += `Name: ${nft.name || 'Unnamed NFT'}\n`;
-              alchemyContext += `Description: ${nft.description || 'No description'}\n`;
+              alchemyContext += `Name: ${nft.name || nft.title || 'Unnamed NFT'}\n`;
+              alchemyContext += `Description: ${(nft.description || 'No description').substring(0, 200)}\n`; // Limit description length
               alchemyContext += `Collection: ${nft.collection?.name || nft.contract?.openSeaMetadata?.collectionName || 'Unknown'}\n`;
               alchemyContext += `Chain: ${nft.network}\n`;
               alchemyContext += `Token ID: ${nft.tokenId}\n`;
-              alchemyContext += `Token Type: ${nft.tokenType}\n`;
+              alchemyContext += `Token Type: ${nft.tokenType || 'ERC721'}\n`;
               alchemyContext += `Contract Address: ${nft.contract?.address}\n`;
               
-              // Image URLs
-              if (nft.image?.cachedUrl) {
-                alchemyContext += `Image URL: ${nft.image.cachedUrl}\n`;
+              // Image URLs - Extract from multiple possible sources
+              let imageUrl = nft.image?.cachedUrl || 
+                           nft.image?.originalUrl || 
+                           nft.media?.[0]?.gateway || 
+                           nft.media?.[0]?.raw ||
+                           nft.raw?.metadata?.image ||
+                           nft.metadata?.image;
+              
+              if (imageUrl) {
+                // Convert IPFS URLs to gateway URLs
+                if (imageUrl.startsWith('ipfs://')) {
+                  imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                }
+                alchemyContext += `IMAGE_URL: ${imageUrl}\n`;
               }
+              
+              // Thumbnail
               if (nft.image?.thumbnailUrl) {
                 alchemyContext += `Thumbnail URL: ${nft.image.thumbnailUrl}\n`;
               }
               
-              // External links
-              if (nft.raw?.metadata?.url) {
-                alchemyContext += `View on ENS: ${nft.raw.metadata.url}\n`;
-              }
+              // Contract explorer link
+              const explorerUrl = `https://polygonscan.com/token/${nft.contract?.address}?a=${nft.tokenId}`;
+              alchemyContext += `Contract Explorer: ${explorerUrl}\n`;
+              
+              // OpenSea link
               if (nft.contract?.address && nft.tokenId) {
-                const openseaUrl = `https://opensea.io/assets/${nft.network.includes('eth') ? 'ethereum' : nft.network.replace('-mainnet', '')}/${nft.contract.address}/${nft.tokenId}`;
+                const networkName = nft.network.includes('eth') ? 'ethereum' : nft.network.replace('-mainnet', '');
+                const openseaUrl = `https://opensea.io/assets/${networkName}/${nft.contract.address}/${nft.tokenId}`;
                 alchemyContext += `OpenSea URL: ${openseaUrl}\n`;
               }
               
@@ -568,7 +589,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if message is blockchain-related (only for non-Alchemy queries)
-    if (!alchemyContext && !isBlockchainQuery(message)) {
+    // Allow follow-up messages if there's conversation history (user is continuing a blockchain topic)
+    const hasConversationHistory = messages && messages.length > 0;
+    const isFollowUp = hasConversationHistory && (
+      message.toLowerCase().includes('more') ||
+      message.toLowerCase().includes('full list') ||
+      message.toLowerCase().includes('show all') ||
+      message.toLowerCase().includes('details') ||
+      message.toLowerCase().includes('image') ||
+      message.toLowerCase().includes('continue') ||
+      message.toLowerCase().includes('what about') ||
+      message.toLowerCase().includes('tell me more') ||
+      message.length < 50 // Short messages are likely follow-ups
+    );
+    
+    if (!alchemyContext && !isBlockchainQuery(message) && !isFollowUp) {
       return NextResponse.json({
         response: "❌ Not Blockchain-Related\n\nI'm Arion, a specialized AI assistant for blockchain and Web3. I can only help with:\n\n💰 Wallet balances & token holdings\n🖼️ NFT collections\n📊 Transaction history\n📜 Smart contracts & Solidity\n🔄 DeFi protocols\n⛓️ Multi-chain queries\n🎓 Blockchain education\n\nPlease ask me something related to blockchain, crypto, or Web3! 🚀"
       });
@@ -592,21 +627,47 @@ CRITICAL FORMATTING RULES:
 
 LINK FORMATTING (EXTREMELY IMPORTANT):
 - ALWAYS format explorer links as: [View on Etherscan](URL) or [View Transactions](URL)
-- Format NFT images as: [Image](ImageURL) so they are clickable and viewable
+- Format NFT images using markdown image syntax: ![NFT Name](ImageURL) to display inline
 - Make ALL URLs clickable by formatting them properly [text](url)
 - Never show raw URLs unless specifically requested
 - Include OpenSea links as: [OpenSea](URL)
 
-NFT DISPLAY RULES:
-- When showing NFT data, ALWAYS display the image using the Image URL provided
-- Show FULL NFT details including name, description, collection, chain, and links
-- Display thumbnail for quick preview and full image URL for high quality
-- Include OpenSea and ENS links when available
+NFT DISPLAY RULES (CRITICAL - IMAGES MUST DISPLAY INLINE):
+- ALWAYS use markdown image syntax: ![alt](url) to display images directly in chat
+- Each NFT MUST show its image using: ![NFT Name](IMAGE_URL)
+- Format each NFT as:
+  🎨 NFT Name
+  ![](image_url_here)
+  Description: Brief text
+  📜 [Contract](explorer_url) | 🌊 [OpenSea](opensea_url)
+
+- CRITICAL IMAGE SYNTAX:
+  * Use ![](url) or ![NFT](url) - this embeds the image inline
+  * NEVER use [Image](url) - this creates a link, not an embedded image
+  * NEVER use [View Image](url) - this creates a link, not an embedded image
+  * Extract IMAGE_URL from the data and use it with ! prefix
+- Images auto-resize to fit chat (max 400px)
+- Keep descriptions under 100 chars
+- Use emojis: 🎨 art, 🎮 gaming, 🏆 collectibles, 📜 contracts
 
 TRANSACTION/EXPLORER LINKS:
 - When transaction API is unavailable, provide blockchain explorer links
 - Format them as clickable: [View Transactions on Etherscan](URL)
 - Explain what users can find on the explorer (all transactions, token transfers, internal txs)
+
+MULTI-CHAIN BALANCE DISPLAY RULES:
+- When showing multi-network balances, organize by blockchain network
+- Display BOTH native tokens (ETH, MATIC) AND ERC20 tokens (USDC, USDT, etc.)
+- Show ALL tokens with non-zero balances, no matter how small
+- Format clearly with network name as header, then list all tokens under each network
+- Example format:
+  Ethereum:
+  - ETH: 0.123
+  - USDC: 100.50
+  
+  Polygon:
+  - MATIC: 0.525
+  - USDC: 19.18
 
 Your capabilities:
 💰 Check wallet balances (Alchemy API integration)
@@ -646,7 +707,7 @@ for (let attempt = 1; attempt <= maxRetries; attempt++) {
           ...messages.slice(-20), // Keep last 20 messages for context (10 user + 10 assistant pairs)
           { role: "user", content: message }
         ],
-        max_tokens: 1000,
+        max_tokens: 3000, // Increased for longer NFT lists and detailed responses
         temperature: 0.7
       })
     });

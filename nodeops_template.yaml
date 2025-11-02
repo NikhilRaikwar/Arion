@@ -24,7 +24,7 @@ services:
     # Environment variables for runtime
     # NOTE: Keep this YAML private on NodeOps if it contains API keys!
     env:
-      - name: NODE_ENV
+        - name: NODE_ENV
         value: production
       - name: NEXT_PUBLIC_PRIVY_APP_ID
         value: YOUR_PRIVY_APP_ID

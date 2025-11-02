@@ -136,7 +136,7 @@ function formatBalance(rawBalance: string, decimals: number): string {
   }
 }
 
-// Portfolio API - Token Balances with Prices
+// Portfolio API - Token Balances with Prices (using direct fetch API)
 export async function getTokenBalancesWithPrices(
   address: string,
   chains: SupportedChain[] = ["ethereum"]
@@ -144,74 +144,134 @@ export async function getTokenBalancesWithPrices(
   const apiKey = process.env.ALCHEMY_API_KEY;
   if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
 
-  const url = `https://api.g.alchemy.com/data/v1/${apiKey}/assets/tokens/by-address`;
+  const allTokens: any[] = [];
 
-  const networks = chains.map((chain) => networkEnumMap[chain]);
+  // Fetch token balances from each chain
+  for (const chain of chains) {
+    try {
+      const network = networkEnumMap[chain];
+      const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey}`;
+      
+      // Get native balance (ETH, MATIC, etc.)
+      const nativeBalanceResp = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_getBalance',
+          params: [address, 'latest']
+        }),
+        cache: 'no-store'
+      });
+      
+      const nativeBalanceData = await nativeBalanceResp.json();
+      
+      if (nativeBalanceData.result) {
+        const nativeBalance = hexToDecimal(nativeBalanceData.result);
+        const nativeBalanceStr = formatBalance(nativeBalance, 18);
+        
+        if (parseFloat(nativeBalanceStr) > 0) {
+          // Determine native token symbol
+          let nativeSymbol = 'ETH';
+          let nativeName = 'Ethereum';
+          if (chain.includes('polygon')) {
+            nativeSymbol = 'MATIC';
+            nativeName = 'Polygon';
+          } else if (chain.includes('arbitrum')) {
+            nativeSymbol = 'ETH';
+            nativeName = 'Arbitrum ETH';
+          } else if (chain.includes('optimism')) {
+            nativeSymbol = 'ETH';
+            nativeName = 'Optimism ETH';
+          } else if (chain.includes('base')) {
+            nativeSymbol = 'ETH';
+            nativeName = 'Base ETH';
+          }
+          
+          allTokens.push({
+            network: chain,
+            contractAddress: null,
+            symbol: nativeSymbol,
+            name: nativeName,
+            logo: null,
+            decimals: 18,
+            balance: nativeBalanceStr,
+            priceUsd: null,
+            valueUsd: null,
+          });
+        }
+      }
 
-  const body = {
-    addresses: [{ address, networks }],
-    withMetadata: true,
-    withPrices: true,
-    includeNativeTokens: true,
-    includeErc20Tokens: true,
-  };
-
-  let allTokens: any[] = [];
-  let pageKey: string | undefined = undefined;
-
-  do {
-    const requestBody: any = pageKey ? { ...body, pageKey } : body;
-
-    const response: Response = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(requestBody),
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Portfolio API error: ${response.status}`);
+      // Get ERC20 token balances
+      const tokenBalancesResp = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'alchemy_getTokenBalances',
+          params: [address, 'erc20']
+        }),
+        cache: 'no-store'
+      });
+      
+      const tokenBalancesData = await tokenBalancesResp.json();
+      const tokenBalances = tokenBalancesData.result?.tokenBalances || [];
+      
+      for (const token of tokenBalances) {
+        if (token.tokenBalance && token.tokenBalance !== '0x0' && token.tokenBalance !== '0x') {
+          try {
+            // Get token metadata
+            const metadataResp = await fetch(rpcUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 3,
+                method: 'alchemy_getTokenMetadata',
+                params: [token.contractAddress]
+              }),
+              cache: 'no-store'
+            });
+            
+            const metadataData = await metadataResp.json();
+            const metadata = metadataData.result || {};
+            
+            const decimals = metadata.decimals ?? 18;
+            const balance = hexToDecimal(token.tokenBalance);
+            const balanceStr = formatBalance(balance, decimals);
+            
+            if (parseFloat(balanceStr) > 0) {
+              allTokens.push({
+                network: chain,
+                contractAddress: token.contractAddress,
+                symbol: metadata.symbol ?? 'UNKNOWN',
+                name: metadata.name ?? null,
+                logo: metadata.logo ?? null,
+                decimals,
+                balance: balanceStr,
+                priceUsd: null,
+                valueUsd: null,
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching token metadata for ${token.contractAddress}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching balances for ${chain}:`, error);
     }
+  }
 
-    const data: any = await response.json();
-    const tokens = data?.data?.tokens ?? [];
-    allTokens.push(...tokens);
-    pageKey = data?.data?.pageKey;
-  } while (pageKey);
-
-  // Process tokens with proper formatting
-  const processedTokens = allTokens
-    .map((token) => {
-      const metadata = token.tokenMetadata ?? {};
-      const decimals =
-        typeof metadata.decimals === "number"
-          ? metadata.decimals
-          : 18;
-
-      const rawBalance = token.tokenBalance ?? "0";
-      const balanceStr = formatBalance(rawBalance, decimals);
-      const balanceNum = parseFloat(balanceStr);
-
-      // Get USD price
-      const priceUsd =
-        token.tokenPrices?.find((p: any) => p.currency?.toLowerCase() === "usd")?.value ?? null;
-      const priceNum = priceUsd ? parseFloat(priceUsd) : null;
-      const valueUsd = priceNum && balanceNum ? balanceNum * priceNum : null;
-
-      return {
-        network: token.network,
-        contractAddress: token.tokenAddress ?? null,
-        symbol: metadata.symbol ?? (token.tokenAddress ? "TOKEN" : "Native"),
-        name: metadata.name ?? null,
-        logo: metadata.logo ?? null,
-        decimals,
-        balance: balanceStr,
-        priceUsd: priceNum,
-        valueUsd,
-      };
-    })
-    .filter((t) => parseFloat(t.balance) > 0)
-    .sort((a, b) => (b.valueUsd ?? 0) - (a.valueUsd ?? 0));
+  // Sort by balance (tokens with values first, then by balance)
+  const processedTokens = allTokens.sort((a, b) => {
+    const aValue = a.valueUsd ?? 0;
+    const bValue = b.valueUsd ?? 0;
+    if (aValue !== bValue) return bValue - aValue;
+    return parseFloat(b.balance) - parseFloat(a.balance);
+  });
 
   const totalValue = processedTokens.reduce((sum, t) => sum + (t.valueUsd ?? 0), 0);
 
@@ -223,7 +283,7 @@ export async function getTokenBalancesWithPrices(
   };
 }
 
-// Portfolio API - NFTs
+// Portfolio API - NFTs (using network-specific NFT API endpoint)
 export async function getNFTsForWallet(
   address: string,
   chains: SupportedChain[] = ["ethereum"]
@@ -231,51 +291,56 @@ export async function getNFTsForWallet(
   const apiKey = process.env.ALCHEMY_API_KEY;
   if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
 
-  const url = `https://api.g.alchemy.com/data/v1/${apiKey}/assets/nfts/by-address`;
+  // Fetch NFTs from each chain using the NFT API endpoint
+  const allNfts: any[] = [];
 
-  const networks = chains.map((chain) => networkEnumMap[chain]);
+  for (const chain of chains) {
+    try {
+      const network = networkEnumMap[chain];
+      const url = `https://${network}.g.alchemy.com/nft/v2/${apiKey}/getNFTs`;
+      
+      const queryParams = new URLSearchParams({
+        owner: address,
+        withMetadata: 'true',
+        pageSize: '100'
+      });
 
-  const body = {
-    addresses: [{ address, networks }],
-    withMetadata: true,
-    pageSize: 100,
-  };
+      const response = await fetch(`${url}?${queryParams.toString()}`, {
+        method: "GET",
+        headers: { "accept": "application/json" },
+        cache: "no-store",
+      });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+      if (!response.ok) {
+        console.error(`NFT API error for ${chain}: ${response.status}`);
+        continue;
+      }
 
-  if (!response.ok) {
-    throw new Error(`NFT API error: ${response.status}`);
+      const data = await response.json();
+      const nfts = data?.ownedNfts ?? [];
+      
+      // Add network info to each NFT
+      const nftsWithNetwork = nfts.map((nft: any) => ({
+        ...nft,
+        network: chain
+      }));
+      
+      allNfts.push(...nftsWithNetwork);
+    } catch (error) {
+      console.error(`Error fetching NFTs for ${chain}:`, error);
+      // Continue to next chain
+    }
   }
 
-  const data = await response.json();
-  return data?.data?.ownedNfts ?? [];
+  return allNfts;
 }
 
-// Token Prices API
+// Token Prices API (Note: Prices API requires special access, returning empty for now)
 export async function getTokenPrices(addresses: { network: string; address: string }[]) {
-  const apiKey = process.env.ALCHEMY_API_KEY;
-  if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
-
-  const url = `https://api.g.alchemy.com/prices/v1/${apiKey}/tokens/by-address`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ addresses }),
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Prices API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data?.data ?? [];
+  // Note: The Prices API at api.g.alchemy.com may require special access
+  // For production, consider integrating with CoinGecko, CoinMarketCap, or similar
+  console.warn('Token prices API not available - consider integrating a price feed service');
+  return [];
 }
 
 // RPC Methods via JSON-RPC
@@ -464,7 +529,7 @@ export async function getMultiChainPortfolio(address: string) {
 }
 
 // Smart contract validation
-export async function validateContract(address: string, chain: SupportedChain) {
+export async function validateContractLegacy(address: string, chain: SupportedChain) {
   const alchemy = getAlchemy(chain);
   const code = await alchemy.core.getCode(address);
   const isContract = code !== "0x";
@@ -520,4 +585,233 @@ export async function getGasPrice(chain: SupportedChain) {
 export async function getTokenMetadata(contractAddress: string, chain: SupportedChain) {
   const result = await rpcCall("alchemy_getTokenMetadata", [contractAddress], chain);
   return { chain, ...result };
+}
+
+// Validate if an address is a smart contract
+export async function validateContract(address: string, chain: SupportedChain) {
+  try {
+    const apiKey = process.env.ALCHEMY_API_KEY;
+    if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
+
+    const network = networkEnumMap[chain];
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey}`;
+
+    // Check if it's a contract using eth_getCode
+    const codeResponse = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "eth_getCode",
+        params: [address, "latest"],
+      }),
+    });
+
+    const codeData = await codeResponse.json();
+    const code = codeData.result || "0x";
+    const isContract = code !== "0x" && code.length > 2;
+
+    if (!isContract) {
+      return {
+        success: true,
+        valid: false,
+        isContract: false,
+        message: "Address is not a smart contract"
+      };
+    }
+
+    // Get token metadata (if it's a token contract)
+    let metadata = null;
+    try {
+      const metadataResponse = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "alchemy_getTokenMetadata",
+          params: [address],
+        }),
+      });
+      const metadataData = await metadataResponse.json();
+      metadata = metadataData.result || null;
+    } catch {
+      // Not a token contract, that's okay
+    }
+
+    return {
+      success: true,
+      valid: true,
+      isContract: true,
+      address,
+      chain,
+      network,
+      metadata,
+      bytecodeLength: (code.length - 2) / 2,
+    };
+  } catch (error: any) {
+    console.error("Contract validation error:", error);
+    return {
+      success: false,
+      error: error.message || "Contract validation failed"
+    };
+  }
+}
+
+// Get NFT transactions (transfers) by address using alchemy_getAssetTransfers
+export async function getNFTTransactionsByAddress(
+  address: string,
+  chain: SupportedChain,
+  direction: 'from' | 'to' | 'both' = 'both',
+  fromBlock: string = '0x0',
+  toBlock: string = 'latest'
+) {
+  try {
+    const apiKey = process.env.ALCHEMY_API_KEY;
+    if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
+
+    const network = networkEnumMap[chain];
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey}`;
+
+    const transfers: any[] = [];
+
+    // Fetch transfers FROM the address (NFTs sent)
+    if (direction === 'from' || direction === 'both') {
+      const fromResponse = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "alchemy_getAssetTransfers",
+          params: [{
+            fromBlock,
+            toBlock,
+            fromAddress: address,
+            excludeZeroValue: true,
+            category: ["erc721", "erc1155"]
+          }]
+        }),
+      });
+
+      const fromData = await fromResponse.json();
+      if (fromData.result?.transfers) {
+        transfers.push(...fromData.result.transfers.map((t: any) => ({ ...t, direction: 'sent' })));
+      }
+    }
+
+    // Fetch transfers TO the address (NFTs received)
+    if (direction === 'to' || direction === 'both') {
+      const toResponse = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 2,
+          method: "alchemy_getAssetTransfers",
+          params: [{
+            fromBlock,
+            toBlock,
+            toAddress: address,
+            excludeZeroValue: true,
+            category: ["erc721", "erc1155"]
+          }]
+        }),
+      });
+
+      const toData = await toResponse.json();
+      if (toData.result?.transfers) {
+        transfers.push(...toData.result.transfers.map((t: any) => ({ ...t, direction: 'received' })));
+      }
+    }
+
+    // Sort by block number (most recent first)
+    transfers.sort((a, b) => {
+      const blockA = parseInt(a.blockNum, 16);
+      const blockB = parseInt(b.blockNum, 16);
+      return blockB - blockA;
+    });
+
+    return {
+      success: true,
+      address,
+      chain,
+      transfers,
+      totalCount: transfers.length
+    };
+  } catch (error: any) {
+    console.error("NFT transactions fetch error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to fetch NFT transactions"
+    };
+  }
+}
+
+// Get all asset transfers (including NFTs, ERC20, and native tokens)
+export async function getAssetTransfers(
+  params: {
+    fromBlock?: string;
+    toBlock?: string;
+    fromAddress?: string;
+    toAddress?: string;
+    contractAddresses?: string[];
+    excludeZeroValue?: boolean;
+    category?: Array<'external' | 'internal' | 'erc20' | 'erc721' | 'erc1155'>;
+    maxCount?: number;
+    pageKey?: string;
+  },
+  chain: SupportedChain
+) {
+  try {
+    const apiKey = process.env.ALCHEMY_API_KEY;
+    if (!apiKey) throw new Error("ALCHEMY_API_KEY not configured");
+
+    const network = networkEnumMap[chain];
+    const rpcUrl = `https://${network}.g.alchemy.com/v2/${apiKey}`;
+
+    const requestParams: any = {
+      fromBlock: params.fromBlock || '0x0',
+      toBlock: params.toBlock || 'latest',
+      excludeZeroValue: params.excludeZeroValue !== false,
+      category: params.category || ['external', 'erc20', 'erc721', 'erc1155'],
+    };
+
+    if (params.fromAddress) requestParams.fromAddress = params.fromAddress;
+    if (params.toAddress) requestParams.toAddress = params.toAddress;
+    if (params.contractAddresses) requestParams.contractAddresses = params.contractAddresses;
+    if (params.maxCount) requestParams.maxCount = `0x${params.maxCount.toString(16)}`;
+    if (params.pageKey) requestParams.pageKey = params.pageKey;
+
+    const response = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "alchemy_getAssetTransfers",
+        params: [requestParams]
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error.message || 'API Error');
+    }
+
+    return {
+      success: true,
+      transfers: data.result?.transfers || [],
+      pageKey: data.result?.pageKey,
+      totalCount: data.result?.transfers?.length || 0
+    };
+  } catch (error: any) {
+    console.error("Asset transfers fetch error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to fetch asset transfers"
+    };
+  }
 }
